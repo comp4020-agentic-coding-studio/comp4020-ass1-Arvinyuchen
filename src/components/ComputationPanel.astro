@@ -1,0 +1,252 @@
+---
+import { STAGES } from "../lib/stages";
+import {
+  TOKENS,
+  HEAD_COUNT,
+  embed,
+  positionalEncoding,
+  selfAttention,
+  feedForward,
+} from "../lib/toy-example";
+
+const initialStageId = STAGES[0]!.id;
+const defaultToken = 0;
+const defaultHead = 0;
+
+const embeddings = TOKENS.map((token) => ({ token, vector: embed(token) }));
+
+const defaultPosition = 0;
+const positionalVector = positionalEncoding(defaultPosition);
+
+const attention = selfAttention(defaultToken, defaultHead);
+
+const feedForwardInput = embed(TOKENS[defaultToken]!);
+const feedForwardOutput = feedForward(feedForwardInput);
+
+function fmt(n: number): string {
+  return n.toFixed(2);
+}
+
+function weightAlpha(weight: number): number {
+  return Math.round(weight * 100) / 100;
+}
+---
+
+<div class="panels">
+  <div
+    data-stage-panel
+    data-stage="embedding"
+    id="panel-embedding"
+    role="tabpanel"
+    aria-labelledby="tab-embedding"
+    aria-hidden={initialStageId === "embedding" ? "false" : "true"}
+    hidden={initialStageId === "embedding" ? undefined : true}
+  >
+    <h3>Input embedding</h3>
+    <p>Each toy token is looked up in a fixed table and becomes a 4-number vector.</p>
+    <table>
+      <caption class="sr-only">Toy embedding vectors</caption>
+      <thead>
+        <tr>
+          <th scope="col">Token</th>
+          <th scope="col">Vector</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          embeddings.map(({ token, vector }) => (
+            <tr>
+              <th scope="row">{token}</th>
+              <td>[{vector.map(fmt).join(", ")}]</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div
+    data-stage-panel
+    data-stage="positional-encoding"
+    id="panel-positional-encoding"
+    role="tabpanel"
+    aria-labelledby="tab-positional-encoding"
+    aria-hidden={initialStageId === "positional-encoding" ? "false" : "true"}
+    hidden={initialStageId === "positional-encoding" ? undefined : true}
+  >
+    <h3>Positional encoding</h3>
+    <p>
+      A fixed sine/cosine vector, one per position, added to the embedding so word order
+      isn't lost. Drag the slider to see the vector at each position in the toy sentence.
+    </p>
+    <label class="slider-label" for="position-slider">
+      Position: <span data-position-value>{defaultPosition}</span> ({TOKENS[defaultPosition]})
+    </label>
+    <input
+      type="range"
+      id="position-slider"
+      min="0"
+      max={TOKENS.length - 1}
+      step="1"
+      value={defaultPosition}
+    />
+    <p data-position-vector>Encoding vector: [{positionalVector.map(fmt).join(", ")}]</p>
+  </div>
+
+  <div
+    data-stage-panel
+    data-stage="self-attention"
+    id="panel-self-attention"
+    role="tabpanel"
+    aria-labelledby="tab-self-attention"
+    aria-hidden={initialStageId === "self-attention" ? "false" : "true"}
+    hidden={initialStageId === "self-attention" ? undefined : true}
+  >
+    <h3>Self-attention</h3>
+    <p>
+      Pick a query token and one of 8 toy attention heads. The weights below are a real
+      softmax over that head's scaled dot products &mdash; not invented numbers.
+    </p>
+
+    <div class="token-picker" role="group" aria-label="Query token">
+      {
+        TOKENS.map((token, index) => (
+          <button
+            type="button"
+            data-token={token}
+            aria-pressed={index === defaultToken ? "true" : "false"}
+          >
+            {token}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="head-picker" role="group" aria-label="Attention head">
+      {
+        Array.from({ length: HEAD_COUNT }, (_, head) => (
+          <button
+            type="button"
+            data-head={head}
+            aria-pressed={head === defaultHead ? "true" : "false"}
+          >
+            {head + 1}
+          </button>
+        ))
+      }
+    </div>
+
+    <table data-attention-table>
+      <caption class="sr-only">Attention weights from the query token to every token</caption>
+      <thead>
+        <tr>
+          <th scope="col">Token</th>
+          <th scope="col">Weight</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          TOKENS.map((token, index) => (
+            <tr>
+              <th scope="row">{token}</th>
+              <td
+                data-weight-cell={index}
+                style={`--weight: ${weightAlpha(attention.weights[index]!)}`}
+              >
+                {fmt(attention.weights[index]!)}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div
+    data-stage-panel
+    data-stage="feed-forward"
+    id="panel-feed-forward"
+    role="tabpanel"
+    aria-labelledby="tab-feed-forward"
+    aria-hidden={initialStageId === "feed-forward" ? "false" : "true"}
+    hidden={initialStageId === "feed-forward" ? undefined : true}
+  >
+    <h3>Feed-forward</h3>
+    <p>
+      The same small two-layer network (linear, ReLU, linear) is applied to every position on
+      its own. Shown here on <strong>{TOKENS[defaultToken]}</strong>'s embedding, not chained
+      after attention &mdash; the point is the mechanism, not the full data path.
+    </p>
+    <p>Input: [{feedForwardInput.map(fmt).join(", ")}]</p>
+    <p>Output: [{feedForwardOutput.map(fmt).join(", ")}]</p>
+  </div>
+</div>
+
+<style>
+  .panels {
+    max-width: 32rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 0.75rem 0;
+  }
+
+  th,
+  td {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid #d4d4d8;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  td[data-weight-cell] {
+    background-color: rgba(67, 56, 202, var(--weight, 0));
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .slider-label {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    max-width: 20rem;
+    min-height: 44px;
+  }
+
+  .token-picker,
+  .head-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.6rem 0;
+  }
+
+  .token-picker button,
+  .head-picker button {
+    min-width: 44px;
+    min-height: 44px;
+    border: 1.5px solid #a5b4fc;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #3730a3;
+    cursor: pointer;
+  }
+
+  .token-picker button[aria-pressed="true"],
+  .head-picker button[aria-pressed="true"] {
+    background: #4338ca;
+    border-color: #4338ca;
+    color: #ffffff;
+  }
+</style>

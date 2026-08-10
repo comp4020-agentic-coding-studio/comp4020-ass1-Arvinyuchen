@@ -1,0 +1,78 @@
+---
+import { STAGES } from "../lib/stages";
+
+const initialStage = STAGES[0]!;
+---
+
+<div class="stepper">
+  <div class="tablist" role="tablist" aria-label="Transformer stages" data-testid="interaction-trigger">
+    {
+      STAGES.map((stage, index) => (
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          data-stage={stage.id}
+          aria-selected={stage.id === initialStage.id ? "true" : "false"}
+          aria-controls={`panel-${stage.id}`}
+          id={`tab-${stage.id}`}
+        >
+          <span class="tab-index">{index + 1}</span>
+          {stage.title}
+        </button>
+      ))
+    }
+  </div>
+  <p class="status" aria-live="polite">
+    Step 1 of {STAGES.length}: {initialStage.title}
+  </p>
+</div>
+
+<style>
+  .stepper {
+    margin-bottom: 1rem;
+  }
+
+  .tablist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.9rem;
+    min-height: 44px;
+    border: 1.5px solid #a5b4fc;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #3730a3;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected="true"] {
+    background: #4338ca;
+    border-color: #4338ca;
+    color: #ffffff;
+  }
+
+  .tab-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.08);
+    font-size: 0.8rem;
+  }
+
+  .status {
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    color: #3f3f46;
+  }
+</style>
