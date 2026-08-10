@@ -34,7 +34,11 @@ and see `spec/README.md` for how the checks in this repo relate to it.
   you the file, the line, or the contract. Treat a red check as authoritative
   --- the page is wrong until the check is green, not until you decide it should
   be.
-- Commit when the checks pass. Never commit a red state.
+- Commit when the checks pass. Never commit a red state --- with **one stated
+  exception**: a spec test may be committed before the implementation that
+  satisfies it, so the contract is in the history before the code that answers
+  it. A red build, typecheck, or lint is never acceptable. Amending this rule
+  rather than quietly working around it is the point of having it written down.
 
 ## The checks (your sensors)
 
@@ -113,6 +117,30 @@ template's Vite config uses relative asset URLs to sidestep that, but most
 generators (Astro included) need `base` set explicitly, and getting it wrong
 looks fine locally while every asset 404s on the live URL. And commit the
 updated `pnpm-lock.yaml`: CI installs with `--frozen-lockfile`.
+
+### This repo: on Astro
+
+Carried forward from last week's prototype. Pages live in `src/pages/*.astro`;
+`astro.config.mjs` sets `base` to `/comp4020-ass1-Arvinyuchen` for the deployed
+org-Pages path --- that value is per-repo, so it needs setting again here, not
+copied from last week's. `pnpm typecheck` runs `astro check` instead of raw
+`tsc`. Internal `<a>` hrefs stay **relative** (`./`, not `import.meta.env.BASE_URL`)
+--- an absolute base-prefixed href is correct once deployed but 404s under
+`linkinator`'s local `./dist` crawl, since the on-disk tree doesn't mirror the
+deployed subpath. Keep it that way rather than reaching for the base-aware
+helper.
+
+Two build options exist for the same reason, and both are load-bearing:
+
+- `build.format: "file"` --- every page lands at `dist/*.html`, so one set of
+  relative hrefs works from every page. Under the default directory format the
+  nav would have to know its own depth.
+- `build.inlineStylesheets: "always"` --- past ~4 KB Astro would emit a
+  `<link href="/comp4020-ass1-Arvinyuchen/_astro/*.css">`, which is the
+  absolute-href trap again, this time in a tag nobody hand-writes.
+
+If you find yourself fighting either of these, the fix is upstream of the
+config.
 
 ## Your process is part of the mark
 
