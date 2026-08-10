@@ -1,74 +1,56 @@
 # Process overview
 
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-A reading-guide to how the work came together --- a map to your process, not an
-essay about it. Markers read this file and follow its citations; they don't
-trawl the repo for evidence you didn't point at, so if a moment mattered, cite
-it.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and each brief adds its own word count and moment count.
-
-## What I built
-
-One paragraph: the thing, and the idea behind it.
+A single-page, interactive redraw of the Transformer encoder from ["Attention Is All You
+Need"](https://arxiv.org/pdf/1706.03762): a four-stage tablist (embedding, positional
+encoding, self-attention with an 8-head selector, feed-forward) drives both an original SVG
+architecture diagram and a live computation panel, all running real toy math over a fixed
+4-token sentence — never a fabricated "model output".
 
 ## The moments that mattered
 
-Three or four for an assignment; fewer is fine for a weekly prototype. Keep the
-list short so each moment has room to do all four jobs:
+1. **Committing the spec test red, without breaking the build.** The one-week rule is "never
+   commit a red build or typecheck", but the course's one stated exception is a spec test
+   committed before the implementation exists. Importing `stages.ts`/`toy-example.ts` into
+   the test before they existed would have failed typecheck, which the exception doesn't
+   cover — so instead the test hardcoded the expected constants (`STAGE_IDS`, `TOKENS`,
+   `HEAD_COUNT`) directly, keeping only the *assertions* red.
+   [`1863fae`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/1863fae)
+   committed the 27-assertion contract red; it turned green three commits later once the
+   stepper and panels actually existed
+   [`1863fae...8b69c53`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/compare/1863fae...8b69c53).
 
-1. **what happened** --- the problem, or the thing the agent got wrong
-2. **what you did instead of the obvious thing** --- the call you made, and why
-   it beat the obvious one
-3. **how you knew it was right** --- the check you ran, the viewport you looked
-   at, what you read before accepting the diff
-4. **the citation** --- a commit or commit range, a `CLAUDE.md` change, a check
-   that went from red to green, a prompt paired with the commit it produced
+2. **The unit test caught a real dimensionality bug before it shipped.** `selfAttention()`
+   projects each head's values into `HEAD_DIM`-space (2) via `Wv` and never concatenates the
+   8 heads back into `MODEL_DIM`-space (4) — there's no output-projection matrix in this toy
+   scope. The first draft of `toy-example.test.ts` asserted the output had length `MODEL_DIM`
+   anyway, out of habit rather than by reading what the function actually returns; running
+   `pnpm test` failed immediately and precisely, before the wrong assumption reached a
+   commit. Fixed by asserting `HEAD_DIM` instead and documenting the decision honestly in the
+   feed-forward panel's caption rather than quietly faking a `Wo`-projected data path that
+   doesn't exist.
+   [`27c3251`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/27c3251).
 
-Jobs 2 and 3 are the ones the repo can't tell a reader on its own, so they're
-where the marks are. The strongest moments are the ones where a correction
-landed in the **harness** rather than in another prompt --- a rule added to
-`CLAUDE.md`, a check wired up, an attempt thrown away: re-prompting until it
-passes is the routine case, and changing what the agent works against is the
-skilled one.
+3. **A copy bug only the rendered page showed.** The intro paragraph's two citation links used
+   Astro's `</a\n>` whitespace-trimming trick to keep punctuation glued to the link text on
+   the closing side — but the same trimming ate the newline on the *opening* side too,
+   so the built HTML read `architecture from<a href=...>` with no space at all. `astro check`,
+   the build, and every test stayed green throughout; nothing mechanical would have caught
+   it. Only looking at the actual rendered page in Chrome surfaced "fromAttention Is All You
+   Need" running together. Fixed with an explicit `{" "}` at both sites.
+   [`fdcaff3`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/fdcaff3).
 
-Cite each moment as a link whose text is the commit hash or range and whose
-target is this repo's commit or compare URL, so a reader clicks straight to the
-evidence:
-
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
-
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
-
-> the prompt, verbatim
-
-Screenshots are welcome where one carries the verification better than a
-sentence does. Commit the file to this repo and link it with a **relative**
-path, which is what makes it render on GitHub: `![alt text](docs/before.png)`.
-Images don't count towards the word count and don't replace the citation.
-
-### A worked moment, for shape
-
-Delete this section along with the rest of the boilerplate --- it's here to show
-the four jobs in one paragraph, not to be imitated in content.
-
-> The date formatter kept coming back with `toLocaleDateString()` and no locale
-> argument, so the same build rendered differently on my machine and in CI. I'd
-> already re-prompted it twice, which fixed the line but not the habit, so the
-> third time I put the rule in `CLAUDE.md` instead
-> ([`3f9ac21`](https://github.com/YOUR-ORG/YOUR-REPO/commit/3f9ac21)) and added
-> a spec test that fails on a bare `toLocaleDateString`. That's what told me it
-> had actually taken: the test went red against the old code and green against
-> the new, and the next two features it wrote passed it without prompting
-> ([`3f9ac21...b7e0d14`](https://github.com/YOUR-ORG/YOUR-REPO/compare/3f9ac21...b7e0d14)).
+4. **A tooling limitation, worked around and written into the harness.** The marking spec asks
+   for verification at 1920×1080 and 390×844, but this machine's window manager silently
+   clamps `resize_window` — `window.innerWidth` stayed at ~864px no matter what size was
+   requested, so the two marking viewports couldn't be tested by literally resizing the
+   window. Rather than skip the check or claim it was "probably fine", the workaround was a
+   same-origin `<iframe>` with an explicit `width`/`height`: each iframe gets its own viewport
+   for media-query purposes, so `getComputedStyle` inside it verified the `720px` breakpoint's
+   grid math (`1.2fr 1fr` at 1920px, single column at 390px) at both exact marking sizes. That
+   technique — and its limits (it can't stand in for the click-driven interaction checks,
+   which still ran in the real tab) — is now written into `CLAUDE.md` so it doesn't have to be
+   rediscovered next week.
+   [`41f96eb`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/41f96eb).
 
 ## Before you ship
 
