@@ -211,6 +211,15 @@ head re-query) is verified by hand in Chrome at both marking viewports before sh
 gap is a property of the test tool, not a lowered bar, so don't mistake a green spec run for
 "the interaction works."
 
+This machine's window manager won't give Chrome a true 1920×1080 CSS-pixel viewport —
+`resize_window` requests get silently clamped by the physical display (`window.innerWidth`
+stays fixed regardless of the requested size). Worked around by injecting a same-origin
+`<iframe>` with an explicit `width`/`height` and reading `contentWindow.innerWidth` and
+`getComputedStyle` inside it — the iframe gets its own viewport for media-query purposes, so
+this confirms the `720px` breakpoint's grid math at both marking sizes without needing the
+OS window itself to be that size. Click-driven behaviour (tab/token/head/slider) was still
+verified in the real tab, not the iframe.
+
 The diagram is original SVG (`TransformerDiagram.astro`): own palette, box proportions, and
 typography, redrawing Figure 1's diagrammatic grammar (boxed sublayers, stacked ×N
 repetition, encoder/decoder columns) rather than tracing the paper's figure or copying The
