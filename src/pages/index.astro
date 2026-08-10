@@ -1,24 +1,35 @@
 ---
+import TransformerDiagram from "../components/TransformerDiagram.astro";
 ---
 <!doctype html>
 <html lang="en-AU">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>The Transformer, one stage at a time</title>
   </head>
   <body>
     <header>
       <nav aria-label="Primary">
         <a href="./">Home</a>
+        <a href="#diagram">Jump to interactive diagram</a>
       </nav>
-    </header>
-    <main>
-      <h1>COMP4020 prototype</h1>
-      <p data-testid="intro">
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
+      <h1>The Transformer, one stage at a time</h1>
+      <p>
+        An interactive walk through the encoder half of the Transformer architecture from
+        <a href="https://arxiv.org/pdf/1706.03762" target="_blank" rel="noopener">
+          "Attention Is All You Need"</a
+        >, over a small fixed toy sentence. It's redrawn in an original style rather than
+        traced from the paper's Figure 1 or from
+        <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener"
+          >The Illustrated Transformer</a
+        >; every number shown is computed live from a small set of fixed toy weights, not
+        a trained model's output.
       </p>
+    </header>
+    <main id="diagram">
+      <h2>The encoder stack</h2>
+      <TransformerDiagram />
     </main>
     <style>
       body {
@@ -29,8 +40,9 @@
         color: #1a1a1a;
       }
 
+      header,
       main {
-        max-width: 40rem;
+        max-width: 46rem;
         margin: 0 auto;
       }
 
