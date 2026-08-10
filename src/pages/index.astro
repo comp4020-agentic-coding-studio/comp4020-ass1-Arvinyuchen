@@ -18,11 +18,11 @@ import ComputationPanel from "../components/ComputationPanel.astro";
       </nav>
       <h1>The Transformer, one stage at a time</h1>
       <p>
-        An interactive walk through the encoder half of the Transformer architecture from
+        An interactive walk through the encoder half of the Transformer architecture from{" "}
         <a href="https://arxiv.org/pdf/1706.03762" target="_blank" rel="noopener">
           "Attention Is All You Need"</a
         >, over a small fixed toy sentence. It's redrawn in an original style rather than
-        traced from the paper's Figure 1 or from
+        traced from the paper's Figure 1 or from{" "}
         <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener"
           >The Illustrated Transformer</a
         >; every number shown is computed live from a small set of fixed toy weights, not
@@ -59,6 +59,13 @@ import ComputationPanel from "../components/ComputationPanel.astro";
 
       a {
         color: #0b5fff;
+      }
+
+      nav[aria-label="Primary"] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
       }
 
       .layout {
