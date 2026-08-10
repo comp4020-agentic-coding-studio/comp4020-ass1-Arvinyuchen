@@ -180,6 +180,44 @@ means building legibly is part of building well.
 You don't need a name, a student number, or any identity file in the repo: we
 know whose repo it is. Spend the effort on the work.
 
+### This week: the Transformer stepper
+
+One page, one interaction: a 4-stage tablist (`embedding`, `positional-encoding`,
+`self-attention`, `feed-forward` — the exact ids live in `src/lib/stages.ts`) drives both an
+SVG architecture diagram and a computation panel, over a fixed toy sentence defined once in
+`src/lib/toy-example.ts`. Every number on the page is real output of that module's pure
+functions (`embed`, `positionalEncoding`, `selfAttention`, `feedForward`) run over hardcoded
+toy weights — never an invented "model output". If a number changes on screen, it changed
+because a real (if tiny) computation reran, not because a string got swapped in.
+
+The interaction contract is a `data-*` vocabulary, fixed before the components existed so the
+spec test and the markup agree on names:
+
+- `[data-testid="interaction-trigger"]` — the tablist container.
+- `button[role="tab"][data-stage]` — one of the four stage ids above; `aria-selected` marks
+  the active one.
+- `[data-stage-panel][data-stage]` — one per stage; the active one has no `hidden` attribute,
+  the rest do (`aria-hidden="true"`).
+- `[data-diagram-block][data-active]` — the SVG group matching the active stage.
+- `[data-token]` / `[data-head]` — the self-attention panel's per-token and per-head
+  (0–7) re-query buttons.
+- `[aria-live="polite"]` — the status line announcing stage changes.
+
+JSDOM (what `spec/assignment-1.test.ts` runs against) parses the built HTML but never
+executes scripts, so the spec test can only assert this markup contract — correct initial
+state, right element counts — not that a click actually does anything. Real interactive
+correctness (the diagram highlight, the panel swap, the heatmap/table updating on token or
+head re-query) is verified by hand in Chrome at both marking viewports before shipping; that
+gap is a property of the test tool, not a lowered bar, so don't mistake a green spec run for
+"the interaction works."
+
+The diagram is original SVG (`TransformerDiagram.astro`): own palette, box proportions, and
+typography, redrawing Figure 1's diagrammatic grammar (boxed sublayers, stacked ×N
+repetition, encoder/decoder columns) rather than tracing the paper's figure or copying The
+Illustrated Transformer's specific illustrations. The decoder column is drawn dimmed and
+non-interactive — in scope for visual fidelity to Figure 1, explicitly out of scope for the
+one interaction this page teaches.
+
 ## This file is yours
 
 This CLAUDE.md is a starting point, not a fixed rulebook. As you learn what your
