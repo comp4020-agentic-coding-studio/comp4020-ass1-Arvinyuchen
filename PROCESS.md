@@ -52,6 +52,26 @@ architecture diagram and a live computation panel, all running real toy math ove
    rediscovered next week.
    [`41f96eb`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/41f96eb).
 
+5. **The checks were all green and the page was still wrong.** Every sensor passed — build,
+   typecheck, lint, 27 spec assertions — while the page was a dashboard: two columns of
+   controls, Tailwind-default indigo, 16px system-ui, a `72rem` cap that ran the intro prose
+   to about 160 characters a line, and exactly one CSS transition in the entire repo. Nothing
+   in the harness measures whether a page reads as an explanation, so nothing went red. The
+   fix was a genre change rather than a restyle: a single-column essay at a 62ch measure with
+   real prose either side of one breakout `<figure>`, and every colour, size and duration
+   moved into `src/styles/global.css` as tokens no component may re-declare.
+   [`ee3300d`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/ee3300d).
+
+   Two of the bugs it surfaced were only findable by measuring the rendered page, not by
+   reading the source. Astro scopes `.prose > *` to `.prose[cid] > [cid]`, which outranks a
+   bare `.figure[cid]`, so the breakout figure silently stayed trapped in the measure column —
+   visible only as a `getBoundingClientRect()` of 655px where 1152px was intended, read out of
+   the same iframe probe from moment 4. And adding fifteen lines to `interactive.ts` pushed
+   the hoisted script bundle to 4194 bytes, one step past the 4 KB limit under which Astro
+   inlines it, so the build started emitting a base-prefixed `<script src>` that 404s under
+   `linkinator ./dist` — the stylesheet trap already written into `CLAUDE.md`, reappearing in
+   a different tag. Both are now in `CLAUDE.md` as rules rather than as scar tissue.
+
 ## Before you ship
 
 `pnpm check:evidence` verifies your citations resolve to real commits, that the
