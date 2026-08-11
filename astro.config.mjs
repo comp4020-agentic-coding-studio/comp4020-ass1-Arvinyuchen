@@ -20,4 +20,16 @@ export default defineConfig({
     // the on-disk tree, where the base prefix doesn't exist.
     inlineStylesheets: "always",
   },
+
+  vite: {
+    build: {
+      // Same trap as the stylesheet above, in the tag nobody hand-writes: Astro
+      // inlines a hoisted <script> only while its bundle is under this limit
+      // (4 KB by default), and past it emits
+      // <script src="/comp4020-ass1-Arvinyuchen/_astro/*.js">, which is correct
+      // once deployed but 404s under CI's `linkinator ./dist` crawl. Raised so
+      // adding a few lines of client code can't silently break the links check.
+      assetsInlineLimit: 65536,
+    },
+  },
 });

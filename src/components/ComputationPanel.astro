@@ -2,6 +2,7 @@
 import { STAGES } from "../lib/stages";
 import {
   TOKENS,
+  MODEL_DIM,
   HEAD_COUNT,
   embed,
   positionalEncoding,
@@ -22,6 +23,8 @@ const attention = selfAttention(defaultToken, defaultHead);
 
 const feedForwardInput = embed(TOKENS[defaultToken]!);
 const feedForwardOutput = feedForward(feedForwardInput);
+
+const dimensions = Array.from({ length: MODEL_DIM }, (_, index) => index);
 
 function fmt(n: number): string {
   return n.toFixed(2);
@@ -49,7 +52,7 @@ function weightAlpha(weight: number): number {
       <thead>
         <tr>
           <th scope="col">Token</th>
-          <th scope="col">Vector</th>
+          {dimensions.map((d) => <th scope="col" class="col-num">d{d}</th>)}
         </tr>
       </thead>
       <tbody>
@@ -57,7 +60,9 @@ function weightAlpha(weight: number): number {
           embeddings.map(({ token, vector }) => (
             <tr>
               <th scope="row">{token}</th>
-              <td>[{vector.map(fmt).join(", ")}]</td>
+              {vector.map((value) => (
+                <td class="num">{fmt(value)}</td>
+              ))}
             </tr>
           ))
         }
@@ -79,8 +84,10 @@ function weightAlpha(weight: number): number {
       A fixed sine/cosine vector, one per position, added to the embedding so word order
       isn't lost. Drag the slider to see the vector at each position in the toy sentence.
     </p>
-    <label class="slider-label" for="position-slider">
-      Position: <span data-position-value>{defaultPosition}</span> ({TOKENS[defaultPosition]})
+    <label class="control-label control-label--inline" for="position-slider">
+      <span>Position</span>
+      <span class="num" data-position-value>{defaultPosition}</span>
+      <span class="control-label__token" data-position-token>{TOKENS[defaultPosition]}</span>
     </label>
     <input
       type="range"
@@ -90,7 +97,10 @@ function weightAlpha(weight: number): number {
       step="1"
       value={defaultPosition}
     />
-    <p data-position-vector>Encoding vector: [{positionalVector.map(fmt).join(", ")}]</p>
+    <p class="readout">
+      <span class="readout__label">Encoding vector</span>
+      <span class="num" data-position-vector>[{positionalVector.map(fmt).join(", ")}]</span>
+    </p>
   </div>
 
   <div
@@ -108,7 +118,8 @@ function weightAlpha(weight: number): number {
       softmax over that head's scaled dot products &mdash; not invented numbers.
     </p>
 
-    <div class="token-picker" role="group" aria-label="Query token">
+    <div class="control-label" id="token-picker-label">Query token</div>
+    <div class="picker" role="group" aria-labelledby="token-picker-label">
       {
         TOKENS.map((token, index) => (
           <button
@@ -122,11 +133,13 @@ function weightAlpha(weight: number): number {
       }
     </div>
 
-    <div class="head-picker" role="group" aria-label="Attention head">
+    <div class="control-label" id="head-picker-label">Attention head</div>
+    <div class="picker picker--dense" role="group" aria-labelledby="head-picker-label">
       {
         Array.from({ length: HEAD_COUNT }, (_, head) => (
           <button
             type="button"
+            class="num"
             data-head={head}
             aria-pressed={head === defaultHead ? "true" : "false"}
           >
@@ -141,7 +154,7 @@ function weightAlpha(weight: number): number {
       <thead>
         <tr>
           <th scope="col">Token</th>
-          <th scope="col">Weight</th>
+          <th scope="col" class="col-num">Weight</th>
         </tr>
       </thead>
       <tbody>
@@ -150,6 +163,7 @@ function weightAlpha(weight: number): number {
             <tr>
               <th scope="row">{token}</th>
               <td
+                class="num"
                 data-weight-cell={index}
                 style={`--weight: ${weightAlpha(attention.weights[index]!)}`}
               >
@@ -177,76 +191,181 @@ function weightAlpha(weight: number): number {
       its own. Shown here on <strong>{TOKENS[defaultToken]}</strong>'s embedding, not chained
       after attention &mdash; the point is the mechanism, not the full data path.
     </p>
-    <p>Input: [{feedForwardInput.map(fmt).join(", ")}]</p>
-    <p>Output: [{feedForwardOutput.map(fmt).join(", ")}]</p>
+    <table>
+      <caption class="sr-only">Feed-forward input and output vectors</caption>
+      <thead>
+        <tr>
+          <th scope="col">Vector</th>
+          {dimensions.map((d) => <th scope="col" class="col-num">d{d}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Input</th>
+          {feedForwardInput.map((value) => <td class="num">{fmt(value)}</td>)}
+        </tr>
+        <tr>
+          <th scope="row">Output</th>
+          {feedForwardOutput.map((value) => <td class="num">{fmt(value)}</td>)}
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
 <style>
   .panels {
-    max-width: 32rem;
+    /* Holds the card's height steady as panels of different lengths swap in. */
+    min-height: 20rem;
+  }
+
+  [data-stage-panel]:not([hidden]) {
+    animation: panel-in var(--dur) var(--ease) both;
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  h3 {
+    margin-bottom: var(--space-2);
+  }
+
+  p {
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--ink-2);
   }
 
   table {
+    margin: var(--space-4) 0 0;
     border-collapse: collapse;
-    margin: 0.75rem 0;
+    font-family: var(--font-ui);
   }
 
   th,
   td {
-    padding: 0.35rem 0.6rem;
-    border: 1px solid #d4d4d8;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--rule);
     text-align: left;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
+  }
+
+  thead th {
+    border-bottom: 1px solid var(--rule-strong);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  tbody th {
+    font-weight: 600;
+  }
+
+  .col-num,
+  td.num {
+    text-align: right;
   }
 
   td[data-weight-cell] {
-    background-color: rgba(67, 56, 202, var(--weight, 0));
+    background-color: rgb(var(--accent-rgb) / var(--weight, 0));
+    transition: background-color var(--dur) var(--ease);
   }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-
-  .slider-label {
+  .control-label {
     display: block;
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
+    margin-top: var(--space-4);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* Astro trims the whitespace between adjacent expressions, so the gap
+     between "Position", the index, and the token has to be layout, not text. */
+  .control-label--inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .control-label__token {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ink-2);
+  }
+
+  .readout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-3);
+    margin-top: var(--space-4);
+  }
+
+  .readout__label {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
   }
 
   input[type="range"] {
+    display: block;
     width: 100%;
     max-width: 20rem;
     min-height: 44px;
-  }
-
-  .token-picker,
-  .head-picker {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 0.6rem 0;
-  }
-
-  .token-picker button,
-  .head-picker button {
-    min-width: 44px;
-    min-height: 44px;
-    border: 1.5px solid #a5b4fc;
-    border-radius: 8px;
-    background: #ffffff;
-    color: #3730a3;
+    accent-color: var(--accent);
     cursor: pointer;
   }
 
-  .token-picker button[aria-pressed="true"],
-  .head-picker button[aria-pressed="true"] {
-    background: #4338ca;
-    border-color: #4338ca;
-    color: #ffffff;
+  .picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .picker button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+    color: var(--ink-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease),
+      color var(--dur-fast) var(--ease);
+  }
+
+  .picker--dense button {
+    padding: 0;
+  }
+
+  .picker button:hover {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+    color: var(--accent-strong);
+  }
+
+  .picker button[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
   }
 </style>

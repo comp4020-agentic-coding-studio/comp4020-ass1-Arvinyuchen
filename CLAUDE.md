@@ -130,7 +130,7 @@ copied from last week's. `pnpm typecheck` runs `astro check` instead of raw
 deployed subpath. Keep it that way rather than reaching for the base-aware
 helper.
 
-Two build options exist for the same reason, and both are load-bearing:
+Three build options exist for the same reason, and all are load-bearing:
 
 - `build.format: "file"` --- every page lands at `dist/*.html`, so one set of
   relative hrefs works from every page. Under the default directory format the
@@ -138,9 +138,47 @@ Two build options exist for the same reason, and both are load-bearing:
 - `build.inlineStylesheets: "always"` --- past ~4 KB Astro would emit a
   `<link href="/comp4020-ass1-Arvinyuchen/_astro/*.css">`, which is the
   absolute-href trap again, this time in a tag nobody hand-writes.
+- `vite.build.assetsInlineLimit: 65536` --- the same trap in `<script>`. Astro
+  inlines a hoisted script only while its bundle is under 4 KB; one line past
+  that it emits `<script src="/comp4020-ass1-Arvinyuchen/_astro/*.js">` and the
+  links check goes red with nothing in the source looking wrong. This was found
+  the hard way: adding ~15 lines to `interactive.ts` pushed the bundle to 4194
+  bytes and broke `linkinator ./dist`.
 
-If you find yourself fighting either of these, the fix is upstream of the
-config.
+If you find yourself fighting any of these, the fix is upstream of the config.
+
+### The design layer
+
+`src/styles/global.css` is the **only** place a colour, size, radius, or
+duration literal may be written. It defines the token set (`--ink*`,
+`--surface*`, `--accent*`, `--rule*`, `--text-*`, `--space-*`, `--radius-*`,
+`--dur*`, `--ease`) plus the reset, the prose base, `.num`, `.sr-only`, the
+focus ring, and the `prefers-reduced-motion` guard. Components consume the token
+names and never re-declare a value. It is the first and only file `stylelint`
+actually lints --- `pnpm check` runs `stylelint "**/*.css"`, and the scoped
+`<style>` blocks in `.astro` files are invisible to it, so CSS that matters
+belongs here. Token names must be kebab-case (`--text-sm`, not `--step--1`,
+which `custom-property-pattern` rejects).
+
+`src/layouts/Base.astro` owns the document shell and the client script;
+`src/pages/index.astro` is content plus the page's own layout.
+
+The page is an **essay with one figure**, not a dashboard. Layout is one
+primitive, the breakout grid in `index.astro`: `.prose` is
+`grid-template-columns: 1fr min(var(--measure), 100%) 1fr`, every child sits in
+the centre track at reading measure, and `.figure` spans `1 / -1` to escape it.
+Write that breakout as `.prose > .figure`, not `.figure` --- Astro scopes
+`.prose > *` to `.prose[cid] > [cid]`, which outranks a bare `.figure[cid]`, and
+the figure silently stays trapped in the measure column.
+
+The split is at **900px**, not 720px. Below it, `.figure__stage` goes
+`display: contents` so `order` can put the stage tabs *between* the diagram and
+the readout, and the diagram goes `position: sticky` --- tapping a stage must
+never push its own highlight off-screen. `interactive.ts` also swaps the SVG
+`viewBox` to an encoder-only crop below 900px: at the full viewBox a 390px phone
+renders the encoder labels at ~8px, because half the canvas is the decoder
+mirror. The `<figcaption>` says this out loud rather than describing a decoder
+the phone reader can't see.
 
 ## Your process is part of the mark
 
@@ -216,16 +254,20 @@ This machine's window manager won't give Chrome a true 1920×1080 CSS-pixel view
 stays fixed regardless of the requested size). Worked around by injecting a same-origin
 `<iframe>` with an explicit `width`/`height` and reading `contentWindow.innerWidth` and
 `getComputedStyle` inside it — the iframe gets its own viewport for media-query purposes, so
-this confirms the `720px` breakpoint's grid math at both marking sizes without needing the
+this confirms the `900px` breakpoint's grid math at both marking sizes without needing the
 OS window itself to be that size. Click-driven behaviour (tab/token/head/slider) was still
-verified in the real tab, not the iframe.
+verified in the real tab, not the iframe. The iframe probe is also how the breakout grid's
+specificity bug was caught: measuring `.figure`'s real width at 1920 showed 655px (the
+measure column) rather than the intended 1152px, which no amount of reading the CSS had
+revealed.
 
 The diagram is original SVG (`TransformerDiagram.astro`): own palette, box proportions, and
 typography, redrawing Figure 1's diagrammatic grammar (boxed sublayers, stacked ×N
 repetition, encoder/decoder columns) rather than tracing the paper's figure or copying The
 Illustrated Transformer's specific illustrations. The decoder column is drawn dimmed and
 non-interactive — in scope for visual fidelity to Figure 1, explicitly out of scope for the
-one interaction this page teaches.
+one interaction this page teaches — and is cropped out entirely below 900px, where it would
+only cost the encoder the legibility it needs.
 
 ## This file is yours
 

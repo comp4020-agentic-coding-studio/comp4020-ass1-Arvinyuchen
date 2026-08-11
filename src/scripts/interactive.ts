@@ -56,14 +56,17 @@ function initStepper(): void {
 function initPositionSlider(): void {
   const slider = document.querySelector<HTMLInputElement>("#position-slider");
   const valueLabel = document.querySelector("[data-position-value]");
+  const tokenLabel = document.querySelector("[data-position-token]");
   const vectorText = document.querySelector("[data-position-vector]");
-  if (!slider || !valueLabel || !vectorText) return;
+  if (!slider || !valueLabel || !tokenLabel || !vectorText) return;
 
   slider.addEventListener("input", () => {
     const position = Number(slider.value);
     valueLabel.textContent = `${position}`;
+    tokenLabel.textContent = TOKENS[position] ?? "";
     const vector = positionalEncoding(position);
-    vectorText.textContent = `Encoding vector: [${vector.map(fmt).join(", ")}]`;
+    // The "Encoding vector" label is markup now; this element holds only the numbers.
+    vectorText.textContent = `[${vector.map(fmt).join(", ")}]`;
   });
 }
 
@@ -110,6 +113,27 @@ function initAttentionControls(): void {
   }
 }
 
+/*
+ * At the full viewBox a phone renders the encoder labels at ~8px, because half the
+ * canvas is spent on the decoder mirror. Below the split, crop to the encoder column
+ * so the same box shows the one thing this page is about, at a readable size.
+ */
+const FULL_VIEW_BOX = "16 56 624 480";
+const ENCODER_VIEW_BOX = "16 110 330 425";
+
+function initResponsiveDiagram(): void {
+  const svg = document.querySelector<SVGSVGElement>("svg.diagram");
+  if (!svg) return;
+
+  const narrow = window.matchMedia("(max-width: 899px)");
+  const apply = (): void => {
+    svg.setAttribute("viewBox", narrow.matches ? ENCODER_VIEW_BOX : FULL_VIEW_BOX);
+  };
+  apply();
+  narrow.addEventListener("change", apply);
+}
+
 initStepper();
 initPositionSlider();
 initAttentionControls();
+initResponsiveDiagram();

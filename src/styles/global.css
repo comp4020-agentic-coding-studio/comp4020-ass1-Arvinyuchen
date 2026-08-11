@@ -1,0 +1,144 @@
+/*
+ * Design tokens for the whole site. Components consume these names and never
+ * re-declare a colour, size, or duration literal of their own.
+ */
+:root {
+  /* type */
+  --font-prose: charter, "Bitstream Charter", "Iowan Old Style", "Source Serif 4", georgia, serif;
+  --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1.1875rem;
+  --text-md: 1.375rem;
+  --text-lg: 1.75rem;
+  --text-xl: clamp(2.25rem, 1.6rem + 2.2vw, 3rem);
+  --leading-prose: 1.7;
+  --leading-tight: 1.25;
+  --measure: 62ch;
+
+  /* colour: warm paper, one accent */
+  --surface: #fdfdfc;
+  --surface-figure: #f6f5f2;
+  --surface-raised: #fff;
+  --ink: #1c1b19;
+  --ink-2: #55534e;
+  --ink-3: #86837c;
+  --rule: #e3e0da;
+  --rule-strong: #c9c5bc;
+  --accent-rgb: 44 74 124;
+  --accent: rgb(var(--accent-rgb));
+  --accent-strong: #1f3557;
+  --accent-tint: #eef1f6;
+  --on-accent: #fff;
+
+  /* space */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+
+  /* shape + motion */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --shadow-figure: 0 1px 2px rgb(0 0 0 / 4%), 0 10px 30px -14px rgb(0 0 0 / 14%);
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: var(--space-6) var(--space-5) var(--space-8);
+  background: var(--surface);
+  color: var(--ink);
+  font: var(--text-base) / var(--leading-prose) var(--font-prose);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-ui);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+h2 {
+  font-size: var(--text-lg);
+  font-weight: 650;
+}
+
+h3 {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-color: rgb(var(--accent-rgb) / 35%);
+  text-underline-offset: 0.15em;
+  transition: text-decoration-color var(--dur-fast) var(--ease);
+}
+
+a:hover {
+  text-decoration-color: currentcolor;
+}
+
+button {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Numeric output: mono so vector components line up down a column. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
