@@ -593,3 +593,416 @@ tr[data-dimmed="true"] {
 .ramp-legend__bar[data-scale="sequential"] {
   background-image: linear-gradient(to right, var(--seq-floor), var(--seq-end));
 }
+
+/* ---------------------------------------------------------------- shared */
+
+.figure-note {
+  margin-block-start: var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  text-wrap: pretty;
+}
+
+.readout {
+  margin-block-start: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+}
+
+.readout__head {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.readout__dims {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  margin-block-start: var(--space-2);
+  gap: var(--space-3);
+}
+
+.readout__dims dt {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+.readout__dims dd {
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------- ch 1 lanes */
+
+.lanes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lane {
+  padding: var(--space-3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  transition: opacity var(--dur) var(--ease);
+}
+
+.lane[data-lit="false"] {
+  opacity: 0.4;
+}
+
+.lane__title {
+  margin: 0;
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lane__track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  margin-block-start: var(--space-2);
+  padding: 0;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.lane__node {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.lane__word {
+  padding: var(--space-1) var(--space-2);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.lane__hop {
+  color: var(--role-query);
+}
+
+.lane__track--flat .lane__word {
+  border-color: var(--role-key);
+}
+
+.lane__stats {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  margin-block-start: var(--space-3);
+  gap: var(--space-4);
+}
+
+.lane__stats dt {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+.lane__stats dd {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+/* ---------------------------------------------------------------- ch 3 curves */
+
+.curves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.curve {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+}
+
+.curve__caption {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+.curve svg {
+  width: 100%;
+  height: auto;
+}
+
+.curve__axis {
+  stroke: var(--rule-strong);
+  stroke-width: var(--hairline);
+}
+
+.curve__line {
+  fill: none;
+  stroke: var(--role-position);
+  stroke-width: 2;
+}
+
+.curve__line[data-dashed="true"] {
+  stroke: var(--role-key);
+  stroke-dasharray: 4 3;
+}
+
+.curve__dot {
+  fill: var(--role-position);
+}
+
+.curve__dot[data-fn="cos"] {
+  fill: var(--role-key);
+}
+
+.curve__dot[data-current="true"] {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+/* ---------------------------------------------------------------- ch 4 lanes */
+
+.projection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.projection__op {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--text-lg);
+}
+
+/* ---------------------------------------------------------------- ch 7 heads */
+
+.heads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.head {
+  flex: 1 1 0;
+  min-width: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.head[data-lit="false"] {
+  opacity: 0.45;
+}
+
+.head__title {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.head__desc {
+  margin-block: var(--space-1) var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+.head__argmax {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  margin-block-start: var(--space-2);
+  padding: 0;
+  gap: var(--space-2);
+  list-style: none;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+/* ---------------------------------------------------------------- ch 8 spine */
+
+.spine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.spine__op {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------- ch 10 arch */
+
+.architecture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.stack {
+  flex: 1 1 0;
+  min-width: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.stack[data-lit="false"] {
+  opacity: 0.4;
+}
+
+.stack__title {
+  margin: 0;
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stack__blocks {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  margin-block-start: var(--space-2);
+  padding: 0;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  text-decoration: none;
+}
+
+.block:hover {
+  border-color: var(--accent);
+}
+
+.block[data-kind="cross"] {
+  border-color: var(--role-query);
+  border-style: dashed;
+}
+
+.block[data-kind="norm"] {
+  color: var(--ink-2);
+}
+
+.block__shape {
+  color: var(--ink-3);
+}
+
+.block__note {
+  margin-block-start: var(--space-1);
+  color: var(--role-query);
+}
+
+.stack__bracket {
+  margin: 0;
+  margin-block-start: var(--space-2);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  text-align: end;
+}
+
+/* ---------------------------------------------------------------- ch 11 diff */
+
+.beyond__flag {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-inline-start: var(--space-1) solid var(--role-value);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-sunken);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.diff {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  margin-block-start: var(--space-3);
+  padding: 0;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.diff__toggle {
+  width: 100%;
+  text-align: start;
+}
+
+.diff__why {
+  margin: 0;
+  margin-block-start: var(--space-1);
+  padding-inline-start: var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+.survives {
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-3);
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.survives__title {
+  margin: 0;
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.survives ul {
+  margin-block: var(--space-2) 0;
+  padding-inline-start: var(--space-4);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------- ch 6 table */
+
+.softmax-steps {
+  margin-block-start: var(--space-3);
+  overflow-x: auto;
+}
+
+.softmax-steps table {
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.softmax-steps th,
+.softmax-steps td {
+  padding: var(--space-1) var(--space-2);
+  border-block-end: var(--hairline) solid var(--rule);
+  text-align: end;
+}
+
+.softmax-steps thead th {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.softmax-steps tbody th,
+.softmax-steps tfoot th {
+  color: var(--ink-2);
+  font-weight: 400;
+  text-align: start;
+}
+
+.softmax-steps tfoot td {
+  border-block-end: 0;
+}

@@ -182,6 +182,64 @@ export function head(index: number): HeadPass {
   return runForward().heads[index]!;
 }
 
+export interface LayerOptions {
+  /** Add the sublayer's input to its output, as the paper does. */
+  residual: boolean;
+  /** Normalise each row after the addition. */
+  norm: boolean;
+}
+
+export interface LayerVariant {
+  /** Attention's contribution, with or without the input added back. */
+  afterAttention: number[][];
+  norm1: LayerNormResult[] | null;
+  /** What actually feeds the feed-forward network. */
+  stream1: number[][];
+  ffnPreRelu: number[][];
+  ffnHidden: number[][];
+  ffnOut: number[][];
+  afterFfn: number[][];
+  norm2: LayerNormResult[] | null;
+  out: number[][];
+}
+
+/** The same layer with the residual connection or the normalisation switched
+ * off, so chapter 8 can ablate them.
+ *
+ * Deliberately here rather than inside the chapter component: an ablation
+ * computed in the UI would be a second implementation of the layer, free to
+ * disagree with the real one, and the whole point of the chapter is that turning
+ * a piece off changes numbers the reader has already seen. Not memoised — it
+ * takes arguments, and it runs in microseconds. */
+export function runLayerVariant({ residual, norm }: LayerOptions): LayerVariant {
+  const pass = runForward();
+  const { x, attnOut } = pass;
+
+  const afterAttention = residual ? x.map((row, i) => addVec(row, attnOut[i]!)) : attnOut;
+  const norm1 = norm ? afterAttention.map((row) => layerNorm(row)) : null;
+  const stream1 = norm1 ? norm1.map((r) => r.out) : afterAttention;
+
+  const ffnPreRelu = addBias(matmul(stream1, W_1), B_1);
+  const ffnHidden = ffnPreRelu.map((row) => relu(row));
+  const ffnOut = addBias(matmul(ffnHidden, W_2), B_2);
+
+  const afterFfn = residual ? stream1.map((row, i) => addVec(row, ffnOut[i]!)) : ffnOut;
+  const norm2 = norm ? afterFfn.map((row) => layerNorm(row)) : null;
+  const out = norm2 ? norm2.map((r) => r.out) : afterFfn;
+
+  return {
+    afterAttention,
+    norm1,
+    stream1,
+    ffnPreRelu,
+    ffnHidden,
+    ffnOut,
+    afterFfn,
+    norm2,
+    out,
+  };
+}
+
 /** Shape of each named tensor, derived from the constants rather than written
  * out — chapter 10 labels every block in the architecture diagram with these,
  * and a hardcoded "6×4" would be a claim nothing checks. */

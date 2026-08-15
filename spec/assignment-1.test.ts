@@ -35,12 +35,43 @@ const CHAPTER_IDS = [
 const TOKENS = ["the", "cat", "chased", "the", "small", "mouse"] as const;
 const SEQ_LEN = TOKENS.length;
 
-/** Chapters whose visualisation is built. The rest render as inert nav entries,
- * so the page never links to something that isn't there. */
-const READY = ["05"] as const;
+/** Chapter id → fragment. The nav links to these, and every one has to resolve. */
+const SLUGS: Record<string, string> = {
+  "01": "sequential-vs-parallel",
+  "02": "token-embeddings",
+  "03": "positional-encoding",
+  "04": "query-key-value",
+  "05": "scaled-dot-product",
+  "06": "softmax-and-values",
+  "07": "multi-head-attention",
+  "08": "residual-norm-ffn",
+  "09": "masked-attention",
+  "10": "encoder-decoder",
+  "11": "modern-llms",
+};
 
-const CH05_SLUG = "scaled-dot-product";
+/** Chapters whose visualisation is built. A chapter not in here renders as an
+ * inert nav entry, so the page never links to something that isn't there. */
+const READY: readonly string[] = [...CHAPTER_IDS];
+
+const CH05_SLUG = SLUGS["05"]!;
 const CH05_BEATS = ["formula", "queries-and-keys", "one-score", "all-scores", "scaling"] as const;
+
+/** Expected beat count per chapter, so a chapter silently losing its prose is a
+ * failure rather than a quiet regression. */
+const BEATS_PER_CHAPTER: Record<string, number> = {
+  "01": 4,
+  "02": 3,
+  "03": 4,
+  "04": 3,
+  "05": 5,
+  "06": 5,
+  "07": 5,
+  "08": 4,
+  "09": 4,
+  "10": 4,
+  "11": 3,
+};
 
 function loadBuiltPage(): Document {
   const distPath = resolve("dist/index.html");
@@ -107,9 +138,9 @@ describe("the chapter navigation", () => {
     const doc = loadBuiltPage();
     for (const id of CHAPTER_IDS) {
       const node = doc.querySelector(`[data-chapter-link="${id}"]`)!;
-      if ((READY as readonly string[]).includes(id)) {
+      if (READY.includes(id)) {
         expect(node.tagName, `chapter ${id} should be a link`).toBe("A");
-        expect(node.getAttribute("href")).toBe(`#${CH05_SLUG}`);
+        expect(node.getAttribute("href")).toBe(`#${SLUGS[id]}`);
       } else {
         expect(node.tagName, `chapter ${id} should not be a link yet`).not.toBe("A");
         expect(node.getAttribute("aria-disabled")).toBe("true");
@@ -129,6 +160,93 @@ describe("the chapter navigation", () => {
   });
 });
 
+describe("every chapter", () => {
+  it("is on the page, in order, addressable by its slug", () => {
+    const doc = loadBuiltPage();
+    const chapters = [...doc.querySelectorAll("[data-chapter]")];
+    expect(chapters).toHaveLength(CHAPTER_IDS.length);
+    chapters.forEach((node, i) => {
+      const id = CHAPTER_IDS[i]!;
+      expect(node.getAttribute("data-chapter")).toBe(id);
+      expect(node.id, `chapter ${id} should be anchored at its slug`).toBe(SLUGS[id]);
+    });
+  });
+
+  it("server-renders its visualisation, so nothing needs JavaScript to appear", () => {
+    const doc = loadBuiltPage();
+    for (const id of CHAPTER_IDS) {
+      const chapter = doc.querySelector(`[data-chapter="${id}"]`)!;
+      expect(
+        chapter.querySelector(`[data-viz="${SLUGS[id]}"]`),
+        `chapter ${id} has no server-rendered figure`,
+      ).not.toBeNull();
+    }
+  });
+
+  it("has its prose beats and a matching stepper", () => {
+    const doc = loadBuiltPage();
+    for (const id of CHAPTER_IDS) {
+      const chapter = doc.querySelector(`[data-chapter="${id}"]`)!;
+      const expected = BEATS_PER_CHAPTER[id]!;
+
+      const beats = [...chapter.querySelectorAll(".beat[data-stage]")];
+      expect(beats, `chapter ${id} beat count`).toHaveLength(expected);
+
+      const active = beats.filter((n) => n.getAttribute("data-stage-active") === "true");
+      expect(active, `chapter ${id} should start on exactly one beat`).toHaveLength(1);
+
+      const dots = [...chapter.querySelectorAll(`[data-stepper="${id}"] button[data-stage]`)];
+      expect(dots, `chapter ${id} stepper`).toHaveLength(expected);
+
+      // The stepper's ids and the prose's ids have to be the same list, or the
+      // dots step to beats that aren't there.
+      expect(dots.map((n) => n.getAttribute("data-stage"))).toEqual(
+        beats.map((n) => n.getAttribute("data-stage")),
+      );
+    }
+  });
+
+  it("gives every beat non-empty prose", () => {
+    const doc = loadBuiltPage();
+    for (const beat of doc.querySelectorAll(".beat[data-stage]")) {
+      expect(beat.textContent!.trim().length, `empty beat ${beat.getAttribute("data-stage")}`)
+        .toBeGreaterThan(40);
+    }
+  });
+
+  it("carries no source notation into the rendered prose", () => {
+    // chapters.ts holds plain strings and there is no markdown step, so a
+    // backtick or a `d_k` in the source reaches the reader verbatim.
+    const doc = loadBuiltPage();
+    const prose = [...doc.querySelectorAll(".beat, .chapter__thesis")]
+      .map((n) => n.textContent ?? "")
+      .join(" ");
+    expect(prose).not.toMatch(/`/);
+    expect(prose).not.toMatch(/d_k|d_model/);
+  });
+});
+
+describe("chapter 11 is separated from the paper", () => {
+  it("flags itself as later practice", () => {
+    const doc = loadBuiltPage();
+    const chapter = doc.querySelector('[data-chapter="11"]')!;
+    const flag = chapter.querySelector("[data-beyond-flag]");
+    expect(flag, "chapter 11 must say out loud that it is past the paper").not.toBeNull();
+    expect(flag!.textContent!.toLowerCase()).toContain("beyond the paper");
+  });
+
+  it("hedges its claims rather than naming what a given model does", () => {
+    // Asserted against the beat prose, which is server-rendered, rather than
+    // against the interactive note — that one only appears past the first beat,
+    // so it would let an unhedged initial state through.
+    const doc = loadBuiltPage();
+    const chapter = doc.querySelector('[data-chapter="11"]')!;
+    const text = chapter.textContent ?? "";
+    expect(text).toMatch(/widespread choices rather than universal ones/);
+    expect(text).toMatch(/worth checking rather than assuming/);
+  });
+});
+
 describe("chapter 5, the scaled dot-product lab", () => {
   it("is present and addressable by its slug", () => {
     const doc = loadBuiltPage();
@@ -144,7 +262,8 @@ describe("chapter 5, the scaled dot-product lab", () => {
 
   it("has one beat per step, with exactly one active", () => {
     const doc = loadBuiltPage();
-    const beats = [...doc.querySelectorAll(".beat[data-stage]")];
+    const chapter = doc.querySelector('[data-chapter="05"]')!;
+    const beats = [...chapter.querySelectorAll(".beat[data-stage]")];
     expect(beats).toHaveLength(CH05_BEATS.length);
     expect(beats.map((n) => n.getAttribute("data-stage"))).toEqual([...CH05_BEATS]);
     const active = beats.filter((n) => n.getAttribute("data-stage-active") === "true");
@@ -154,9 +273,10 @@ describe("chapter 5, the scaled dot-product lab", () => {
 
   it("has a stepper whose buttons match the beats, with one current step", () => {
     const doc = loadBuiltPage();
-    const trigger = doc.querySelector('[data-testid="interaction-trigger"]');
+    const trigger = doc.querySelector('[data-stepper="05"]');
     expect(trigger, "no interaction trigger — this is the page's core interaction").not.toBeNull();
     expect(trigger!.getAttribute("role")).toBe("group");
+    expect(trigger!.getAttribute("data-testid")).toBe("interaction-trigger");
 
     const dots = [...trigger!.querySelectorAll("button[data-stage]")];
     expect(dots).toHaveLength(CH05_BEATS.length);
@@ -178,8 +298,9 @@ describe("chapter 5, the scaled dot-product lab", () => {
 
   it("renders Q and K as tables with a row per token and a header per column", () => {
     const doc = loadBuiltPage();
+    const chapter = doc.querySelector('[data-chapter="05"]')!;
     for (const name of ["q", "k"]) {
-      const matrix = doc.querySelector(`[data-matrix="${name}"]`);
+      const matrix = chapter.querySelector(`[data-matrix="${name}"]`);
       expect(matrix, `no [data-matrix="${name}"]`).not.toBeNull();
       expect(matrix!.querySelector("table[data-table-view]")).not.toBeNull();
       expect(matrix!.querySelectorAll("tbody tr")).toHaveLength(SEQ_LEN);
@@ -196,7 +317,9 @@ describe("chapter 5, the scaled dot-product lab", () => {
     // The data-viz relief rule: colour is never the only channel. Every cell
     // carries both a rendered number and the unrounded value.
     const doc = loadBuiltPage();
-    const cells = [...doc.querySelectorAll('[data-matrix="q"] td[data-cell]')];
+    const cells = [
+      ...doc.querySelectorAll('[data-chapter="05"] [data-matrix="q"] td[data-cell]'),
+    ];
     expect(cells.length).toBeGreaterThan(0);
     for (const cell of cells) {
       expect(cell.getAttribute("data-value")).toMatch(/^-?\d+\.\d+$/);
@@ -206,9 +329,10 @@ describe("chapter 5, the scaled dot-product lab", () => {
 
   it("sets up the equation as addressable slots", () => {
     const doc = loadBuiltPage();
+    const chapter = doc.querySelector('[data-chapter="05"]')!;
     for (const slot of ["softmax", "qk", "scale", "v"]) {
       expect(
-        doc.querySelector(`[data-slot="${slot}"]`),
+        chapter.querySelector(`[data-slot="${slot}"]`),
         `no [data-slot="${slot}"] — the formula is the diagram, so each term is a slot`,
       ).not.toBeNull();
     }
@@ -216,7 +340,8 @@ describe("chapter 5, the scaled dot-product lab", () => {
 
   it("offers a query picker with one option per token", () => {
     const doc = loadBuiltPage();
-    const buttons = [...doc.querySelectorAll("[data-query-select]")];
+    const chapter = doc.querySelector('[data-chapter="05"]')!;
+    const buttons = [...chapter.querySelectorAll("[data-query-select]")];
     expect(buttons).toHaveLength(SEQ_LEN);
     for (const button of buttons) {
       expect(button.hasAttribute("aria-pressed")).toBe(true);

@@ -2,7 +2,17 @@
 import Base from "../layouts/Base.astro";
 import ChapterNav from "../components/ChapterNav.astro";
 import Hero from "../components/Hero.astro";
+import Ch01SequentialVsParallel from "../components/viz/Ch01SequentialVsParallel.tsx";
+import Ch02Embeddings from "../components/viz/Ch02Embeddings.tsx";
+import Ch03PositionalEncoding from "../components/viz/Ch03PositionalEncoding.tsx";
+import Ch04QueryKeyValue from "../components/viz/Ch04QueryKeyValue.tsx";
 import Ch05ScaledDotProduct from "../components/viz/Ch05ScaledDotProduct.tsx";
+import Ch06SoftmaxAndValues from "../components/viz/Ch06SoftmaxAndValues.tsx";
+import Ch07MultiHead from "../components/viz/Ch07MultiHead.tsx";
+import Ch08ResidualNormFfn from "../components/viz/Ch08ResidualNormFfn.tsx";
+import Ch09MaskedAttention from "../components/viz/Ch09MaskedAttention.tsx";
+import Ch10EncoderDecoder from "../components/viz/Ch10EncoderDecoder.tsx";
+import Ch11ModernLlms from "../components/viz/Ch11ModernLlms.tsx";
 ---
 
 <Base
@@ -15,19 +25,31 @@ import Ch05ScaledDotProduct from "../components/viz/Ch05ScaledDotProduct.tsx";
     <Hero />
 
     <!--
-      `client:visible` rather than `client:load`: the island's markup is
-      server-rendered either way, so the first beat of every chapter is in the
-      HTML and readable before any JavaScript arrives.
+      `client:visible` rather than `client:load`. The markup is server-rendered
+      either way, so the first beat of every chapter is in the HTML and readable
+      before any JavaScript arrives; hydration then happens per chapter as the
+      reader reaches it, instead of eleven islands competing on load.
     -->
+    <Ch01SequentialVsParallel client:visible />
+    <Ch02Embeddings client:visible />
+    <Ch03PositionalEncoding client:visible />
+    <Ch04QueryKeyValue client:visible />
     <Ch05ScaledDotProduct client:visible />
+    <Ch06SoftmaxAndValues client:visible />
+    <Ch07MultiHead client:visible />
+    <Ch08ResidualNormFfn client:visible />
+    <Ch09MaskedAttention client:visible />
+    <Ch10EncoderDecoder client:visible />
+    <Ch11ModernLlms client:visible />
   </main>
 
   <footer class="footer">
     <p>
       Worked from <a href="https://arxiv.org/abs/1706.03762">Vaswani et al.,
       “Attention Is All You Need” (arXiv:1706.03762)</a>. Every number on this
-      page is computed from the weights it shows; none of them come from a
-      trained model.
+      page is computed from the weights it shows; none of them come from a trained
+      model. Chapter 11 describes practice after the paper and is hedged
+      accordingly.
     </p>
   </footer>
 </Base>
