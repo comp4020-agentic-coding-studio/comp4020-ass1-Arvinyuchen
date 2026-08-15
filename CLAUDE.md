@@ -395,17 +395,46 @@ it was verified by pointing an anchor at a missing id and watching it exit 1.
 
 #### Notation, and whose diagram is whose
 
-**Square roots are MathML `<msqrt>`, never a bare U+221A.** U+221A is the hook
-alone: no bar, no stretching. `√dₖ` written that way renders as a tick mark beside
-a letter, which is what shipped in the hero until someone looked at it. `text-decoration:
-overline` is the next wrong answer --- decoration is drawn per inline box, so the
-radicand and its subscript each get a stub with a gap, and neither joins the hook.
-JSX types for the MathML elements live in `src/types/mathml.d.ts`, because React
-ships HTML and SVG types but not MathML.
+**Every equation is KaTeX, rendered at build time.** TeX sources live in
+`src/lib/transformer/notation.ts`; `src/lib/viz/tex.ts` is the only thing that calls
+KaTeX. It runs with `throwOnError` and `strict: "error"`, so a malformed formula
+fails the build rather than shipping red error text, and `trust: false`, so an
+equation can typeset and nothing else. Never render it in the browser: the sources
+are constants, and a parser on the client would re-derive identical markup.
+
+Three things that were learned by doing them wrong first:
+
+- **Do not hand-build equations.** Before KaTeX this page used four mechanisms —
+  CSS flex for fractions, MathML for radicals, `<sup>`/`<sub>` for scripts, Unicode
+  inside strings — and the giveaway was a 40px fraction bar under a 900px numerator,
+  because the bar was a border on a denominator that shrank to its own text. A bare
+  U+221A is the same class of mistake: it is the hook alone, with no bar and no
+  stretching.
+- **Chapter 5 is the one exception, and it is a real one.** KaTeX turns a string
+  into markup and cannot host foreign DOM inside a `\frac`, so the live 6 × 6 grid
+  can never sit in one. Its equation is composed from KaTeX fragments around a hand
+  built fraction bar. Do not "fix" this by rendering it whole — that deletes the
+  signature.
+- **`assetsInlineLimit` must exclude the KaTeX fonts.** All twenty woff2 faces are
+  under 64KB, so the numeric limit base64'd every one into `katex.min.css`, which
+  `inlineStylesheets: "always"` then inlines into the HTML. The hook also has to
+  reimplement the 64KB rule, because returning `undefined` falls back to Vite's 4KB
+  default rather than the value it replaced.
+
+Three spec tests cover the failure a typecheck cannot see — if KaTeX stops running,
+the page ships raw TeX as visible text. They exclude KaTeX's own `<annotation>`
+element, where keeping the source is correct.
+
+There is deliberately **no `--font-math` and no `.math` class**. That token asked for
+"Latin Modern Roman" without self-hosting it, so every visitor fell through to Times
+while these notes claimed an authentic LaTeX texture. KaTeX ships its own Computer
+Modern, which is the first time the claim has been true. Numbers are still
+`--font-mono` with `tabular-nums`: notation is typeset, computed values are tabular,
+and the two are different jobs.
 
 More generally: **prose in `chapters.ts` is plain text with no markdown step**, so
-notation has to be written as the characters it should render as (`dₖ`, not `d_k`),
-and a spec test asserts no rendered prose contains a backtick or a `d_k`.
+notation there has to be written as the characters it should render as (`dₖ`, not
+`d_k`), and a spec test asserts no rendered prose contains a backtick or a `d_k`.
 
 **The originality rule, amended rather than worked around.** Chapter 10's
 architecture diagram is original: own palette, proportions and typography,
