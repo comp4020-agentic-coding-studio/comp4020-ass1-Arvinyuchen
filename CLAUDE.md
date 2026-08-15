@@ -294,10 +294,74 @@ contract — it never executes scripts. **Scope every chapter-specific selector 
 `[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
 and assertions pass for the wrong reason. That happened.
 
-`pnpm test:e2e` (Playwright, 20 tests × 3 projects: 1920×1080, 390×844, and
+`pnpm test:e2e` (Playwright, 35 tests × 3 projects: 1920×1080, 390×844, and
 reduced motion) is what actually verifies interaction, and it is the gate to run
 before shipping. It is outside CI on purpose: it needs a browser download, and a
 flake inside `check` would block the `deploy` job that depends on it.
+
+**Read its summary line, not the tail of its output.** Playwright prints the
+failure list *above* the `N passed` line, so `| tail -3` shows a reassuring pass
+count with the failures scrolled off. Two runs were reported here as fully green
+while five phone accessibility tests were failing. Use
+`| grep -E "passed|failed"`.
+
+`e2e/accessibility.spec.ts` runs axe-core over the whole page, each chapter
+individually, dark mode, and chapter 5 with the grid open. Two rules it keeps
+catching, both of which cost real usability:
+
+- **`opacity` for de-emphasis composites onto text.** A muted 12px label at 0.4
+  opacity measures 1.61:1. Use `filter: saturate()`, which removes the colour cue
+  and leaves luminance alone. Content that is merely inactive is still content
+  someone may want to read; genuinely inapplicable content gets `hidden`, not a
+  fade.
+- **`overflow-x` creates a scrollable region that needs a tab stop.** Any strip
+  that scrolls sideways and has no focusable content inside it cannot be scrolled
+  by keyboard at all, so its far columns are unreachable without a mouse. Matrices
+  with clickable cells already qualify; read-only ones, chapter 6's step table and
+  chapter 3's curve strip carry `tabIndex={0}` with a `role`/`aria-label`.
+
+**Cell text is one ink, and the ramp poles are capped so it always clears 4.5:1.**
+Do not reintroduce a light-on-dark flip past a lightness threshold: the fill has to
+be dark enough for white *before* it is too light for black, and with these ramps
+there is no such crossover — 54 cells sat in the gap. Poles are chosen for the most
+chroma available at a compliant luminance, because contrast depends on luminance
+only and giving away saturation buys nothing.
+
+**Text never wears an identity hue.** Those hues are picked for 3:1 as marks; as
+12px text several measure ~3.6:1. Identity goes in a border or a swatch, the label
+stays in an ink token.
+
+### The figure has to fit the viewport
+
+`.chapter__viz` is inside a `position: sticky` container, and **a sticky element
+taller than the viewport cannot stick** — it scrolls away and the scrollytelling
+premise collapses. This was true on ten of eleven chapters at 390×844 before it was
+measured, up to 2306px in an 844px viewport, and hand-checking never caught it.
+
+Two rules follow. Groups of side-by-side figures stay in a row on narrow screens
+and the row scrolls (`.pair`, `.projection`, `.heads`, `.lanes`, `.spine`,
+`.curves`), with children at `flex: 0 0 auto` so the strip owns the overflow rather
+than flex shrinking each matrix and clipping its cells mid-number. And a chapter
+showing a pipeline discloses it a step at a time instead of rendering every stage
+at once.
+
+Re-measure after any change to what a beat renders. Current state: desktop 0/11
+over, tallest 961px; phone 4/11 over, worst 1012px, three of those by under 50px.
+
+### Scroll performance is fine; do not "fix" it
+
+Measured at deviceScaleFactor 2 across a 250-frame scroll and across stage changes
+with Motion running: 8.3ms median, zero frames over 32ms, no long tasks. Disabling
+the tiled background, the box shadows or the sticky positioning changes nothing.
+
+If you try to measure this in a real browser tab and see catastrophic numbers — 45
+second timeouts for a dozen frames — the tab is backgrounded and
+`requestAnimationFrame` is throttled. That is the measurement, not the page. Use a
+headless run with an explicit `deviceScaleFactor`.
+
+What *was* rough was the absence of transitions: stage changes were hard cuts and
+the figure's height jumped. `Reveal` / `RevealFrame` and a `background-color`
+transition on cells handle that.
 
 Two things that will waste an hour if you don't know them:
 
