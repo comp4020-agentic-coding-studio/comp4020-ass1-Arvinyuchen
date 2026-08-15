@@ -29,15 +29,10 @@ export function ChapterFrame({ chapter, children, vizLabel }: ChapterFrameProps)
 
   return (
     <section className="chapter" data-chapter={chapter.id} id={chapter.slug}>
-      <header className="chapter__head">
-        <p className="chapter__eyebrow num">
-          <span className="sr-only">Chapter </span>
-          {String(chapter.number).padStart(2, "0")}
-        </p>
-        <h2>{chapter.title}</h2>
-        <p className="chapter__thesis">{chapter.thesis}</p>
-      </header>
-
+      {/* The heading sits inside the grid, in the same column as the prose.
+          Outside it, the sticky figure — which is vertically centred in the
+          viewport at desktop widths — floated across the thesis and covered it,
+          because the heading was free to run the full width of the chapter. */}
       <div className="chapter__body">
         <div className="chapter__figure">
           <div className="chapter__viz" data-viz={chapter.slug}>
@@ -99,18 +94,29 @@ export function ChapterFrame({ chapter, children, vizLabel }: ChapterFrameProps)
           </p>
         </div>
 
-        <div className="chapter__prose">
-          {chapter.beats.map((beat, i) => (
-            <p
-              key={beat.id}
-              ref={registerBeat(i)}
-              className="beat"
-              data-stage={beat.id}
-              data-stage-active={stage === i ? "true" : "false"}
-            >
-              {beat.body}
+        <div className="chapter__text">
+          <header className="chapter__head">
+            <p className="chapter__eyebrow num">
+              <span className="sr-only">Chapter </span>
+              {String(chapter.number).padStart(2, "0")}
             </p>
-          ))}
+            <h2>{chapter.title}</h2>
+            <p className="chapter__thesis">{chapter.thesis}</p>
+          </header>
+
+          <div className="chapter__prose">
+            {chapter.beats.map((beat, i) => (
+              <p
+                key={beat.id}
+                ref={registerBeat(i)}
+                className="beat"
+                data-stage={beat.id}
+                data-stage-active={stage === i ? "true" : "false"}
+              >
+                {beat.body}
+              </p>
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -161,10 +161,19 @@
 /* ---------------------------------------------------------------- chapter */
 
 .chapter {
-  max-width: calc(var(--grid-unit) * 160);
+  /* Wide enough that the expanded 6 x 6 score grid, the softmax wrapper and the
+   * trailing V all fit on one line inside the figure column at 1920 -- at 160
+   * units the last column of the grid was clipped and had to be scrolled to. */
+  max-width: calc(var(--grid-unit) * 180);
   margin-inline: auto;
   padding-block: var(--space-8);
   padding-inline: var(--space-4);
+}
+
+.chapter__text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
 }
 
 .chapter__head {
@@ -237,14 +246,17 @@
 
 @media (width >= 900px) {
   .chapter__body {
-    grid-template-columns: minmax(0, 36ch) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 32ch) minmax(0, 1fr);
     align-items: start;
     gap: var(--space-6);
   }
 
-  .chapter__prose {
+  .chapter__text {
     grid-row: 1;
     grid-column: 1;
+  }
+
+  .chapter__prose {
     gap: 60vh;
     padding-block: 30vh;
   }
@@ -1053,6 +1065,15 @@ tr[data-dimmed="true"] {
  * `aria-hidden` anyway, so nothing is lost to a screen reader, and the `sr-only`
  * reading of the whole equation inside Formula.tsx still carries it.
  */
+@media (width >= 900px) {
+  .formula:has(.formula__numerator[data-expanded="true"]) {
+    max-width: 100%;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+  }
+}
+
 @media (width < 900px) {
   .formula:has(.formula__numerator[data-expanded="true"]) {
     flex-direction: column;
