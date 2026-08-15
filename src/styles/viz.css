@@ -1,0 +1,594 @@
+/*
+ * Component styles for the chapter shell and the visualisation primitives.
+ *
+ * A second stylesheet rather than Astro scoped style blocks, for one reason:
+ * stylelint only sees real .css files, and CSS inside .astro files is invisible
+ * to it. React islands have no scoped-style mechanism at all, so putting this
+ * here is what keeps it linted.
+ *
+ * The rule from CLAUDE.md still holds — global.css owns every colour, size,
+ * radius and duration literal, and nothing below writes one. Everything here is
+ * either a `var()` or structural (a grid track, a percentage, a hairline token).
+ */
+
+/* ---------------------------------------------------------------- hero */
+
+.hero {
+  max-width: calc(var(--grid-unit) * 130);
+  margin-inline: auto;
+  padding-block: var(--space-8) var(--space-7);
+  padding-inline: var(--space-4);
+}
+
+.hero__eyebrow {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hero__title {
+  margin-block-start: var(--space-3);
+  max-width: 22ch;
+}
+
+.hero__standfirst {
+  max-width: var(--measure);
+  margin-block-start: var(--space-4);
+  color: var(--ink-2);
+  font-size: var(--text-md);
+  text-wrap: pretty;
+}
+
+.hero__formula {
+  justify-content: flex-start;
+  margin-block-start: var(--space-6);
+  font-size: var(--text-xl);
+}
+
+.hero__sentence {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  margin-block-start: var(--space-6);
+  padding: 0;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.token {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+}
+
+.token__word {
+  font-size: var(--text-md);
+}
+
+.token__index {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+.hero__note {
+  max-width: var(--measure);
+  margin-block-start: var(--space-5);
+  color: var(--ink-2);
+}
+
+/* ---------------------------------------------------------------- glyph nav */
+
+.glyph {
+  display: flex;
+  align-items: center;
+  max-width: calc(var(--grid-unit) * 130);
+  margin-inline: auto;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  gap: var(--space-3);
+  border-block-end: var(--hairline) solid var(--rule);
+}
+
+.glyph__grid {
+  border-collapse: separate;
+  border-spacing: var(--hairline);
+  flex-shrink: 0;
+}
+
+.glyph__cell {
+  width: var(--space-2);
+  height: var(--space-2);
+  padding: 0;
+  border-radius: var(--radius-sm);
+}
+
+.glyph__chapters {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.glyph__link {
+  display: block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  text-decoration: none;
+}
+
+.glyph__link[data-planned="true"] {
+  color: var(--ink-3);
+  opacity: 0.55;
+}
+
+.glyph__link:not([data-planned="true"]):hover {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.footer {
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding-block: var(--space-7);
+  padding-inline: var(--space-4);
+  border-block-start: var(--hairline) solid var(--rule);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------- pair */
+
+.pair {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-block-start: var(--space-4);
+  gap: var(--space-5);
+}
+
+/* ---------------------------------------------------------------- chapter */
+
+.chapter {
+  max-width: calc(var(--grid-unit) * 160);
+  margin-inline: auto;
+  padding-block: var(--space-8);
+  padding-inline: var(--space-4);
+}
+
+.chapter__head {
+  max-width: var(--measure);
+  margin-block-end: var(--space-6);
+}
+
+.chapter__eyebrow {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  letter-spacing: 0.18em;
+}
+
+.chapter__thesis {
+  margin-block-start: var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-md);
+  line-height: var(--leading-prose);
+  text-wrap: pretty;
+}
+
+.chapter__body {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.chapter__figure {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: var(--space-3);
+  background-color: var(--surface);
+}
+
+.chapter__viz {
+  padding: var(--space-4);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-figure);
+  box-shadow: var(--shadow-figure);
+}
+
+.chapter__prose {
+  display: flex;
+  flex-direction: column;
+  max-width: var(--measure);
+  gap: var(--space-7);
+}
+
+.beat {
+  color: var(--ink-2);
+  text-wrap: pretty;
+  transition: color var(--dur) var(--ease);
+}
+
+.beat[data-stage-active="true"] {
+  color: var(--ink);
+}
+
+@media (width >= 900px) {
+  .chapter__body {
+    grid-template-columns: minmax(0, 36ch) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-6);
+  }
+
+  .chapter__prose {
+    grid-row: 1;
+    grid-column: 1;
+    gap: 60vh;
+    padding-block: 30vh;
+  }
+
+  .chapter__figure {
+    grid-row: 1;
+    grid-column: 2;
+
+    /* Centred in the viewport rather than pinned to the top, so the figure and
+     * the beat that describes it are in the eye's path at the same time. */
+    top: 50%;
+    translate: 0 -50%;
+    padding-block: 0;
+    background-color: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------- stepper */
+
+.stepper {
+  display: flex;
+  align-items: center;
+  margin-block-start: var(--space-3);
+  gap: var(--space-2);
+}
+
+.stepper__arrow {
+  min-width: calc(var(--grid-unit) * 5.5);
+  min-height: calc(var(--grid-unit) * 5.5);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  cursor: pointer;
+}
+
+.stepper__arrow:disabled {
+  color: var(--ink-3);
+  cursor: default;
+  opacity: 0.45;
+}
+
+.stepper__dots {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.stepper__dot {
+  width: calc(var(--grid-unit) * 4);
+  min-height: calc(var(--grid-unit) * 5.5);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.stepper__dot::after {
+  display: block;
+  width: 100%;
+  height: var(--space-1);
+  border-radius: var(--radius-sm);
+  background-color: var(--rule-strong);
+  content: "";
+  transition: background-color var(--dur) var(--ease);
+}
+
+.stepper__dot[aria-current="step"]::after {
+  background-color: var(--accent);
+}
+
+.stepper__count {
+  margin: 0;
+  margin-inline-start: auto;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+/* ---------------------------------------------------------------- matrix */
+
+.matrix {
+  margin: 0;
+  overflow-x: auto;
+}
+
+.matrix table {
+  border-collapse: separate;
+
+  /* The data-viz skill asks for a surface gap between adjacent fills so two
+   * saturated cells never read as one block. */
+  border-spacing: calc(var(--hairline) * 2);
+}
+
+.matrix__caption {
+  margin-block-end: var(--space-2);
+  color: var(--role, var(--ink-3));
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: start;
+  text-transform: uppercase;
+}
+
+.matrix__col-head,
+.matrix__row-head {
+  padding: var(--space-1);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.matrix__col-head {
+  text-align: center;
+}
+
+.matrix__row-head {
+  text-align: end;
+}
+
+.matrix__col-head[data-selected="true"],
+tr[data-selected="true"] > .matrix__row-head {
+  color: var(--role, var(--ink));
+  font-weight: 600;
+}
+
+.matrix__row-head button {
+  padding: var(--space-1) var(--space-2);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.matrix__row-head button[aria-pressed="true"] {
+  border-color: var(--role, var(--rule-strong));
+  color: var(--role, var(--ink));
+  font-weight: 600;
+}
+
+.matrix__corner {
+  padding: 0;
+}
+
+.matrix__cell {
+  width: var(--cell-w);
+  height: var(--cell-h);
+  padding: 0;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.matrix__cell[data-masked="true"] {
+  background-color: var(--surface-sunken);
+  color: var(--ink-3);
+}
+
+.matrix__button {
+  width: 100%;
+  height: 100%;
+  border: var(--hairline) solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}
+
+.matrix__button[aria-pressed="true"] {
+  border-color: var(--ink);
+}
+
+tr[data-dimmed="true"] {
+  opacity: 0.32;
+}
+
+/* ---------------------------------------------------------------- working */
+
+.working {
+  margin-block-start: var(--space-3);
+  padding: var(--space-3);
+  border-inline-start: var(--space-1) solid var(--role, var(--rule-strong));
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+}
+
+.working p {
+  margin: 0;
+}
+
+.working__head {
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+
+.working__line {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-prose);
+}
+
+.working__op {
+  color: var(--ink-3);
+}
+
+.working__note {
+  color: var(--ink-3);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+}
+
+.working__divisor {
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------- formula */
+
+.formula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.formula [data-lit="false"] {
+  color: var(--ink-3);
+  opacity: 0.5;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.formula__fn,
+.formula__paren,
+.formula__v {
+  font-size: var(--text-lg);
+}
+
+.formula__paren {
+  color: var(--ink-3);
+  font-size: var(--text-xl);
+}
+
+.formula__fraction {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.formula__numerator[data-expanded="true"] {
+  padding: var(--space-2);
+  border: var(--hairline) dashed var(--rule-strong);
+  border-radius: var(--radius-md);
+}
+
+.formula__denominator {
+  padding-block-start: var(--space-1);
+  border-block-start: var(--hairline) solid currentcolor;
+  font-size: var(--text-md);
+}
+
+.formula__glyph {
+  padding-inline: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-block-start: var(--space-3);
+  gap: var(--space-3);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.control__legend {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toggle {
+  min-height: calc(var(--grid-unit) * 5.5);
+  padding: var(--space-1) var(--space-3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  cursor: pointer;
+}
+
+.toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.row-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.row-picker button {
+  min-height: calc(var(--grid-unit) * 5.5);
+  padding: var(--space-1) var(--space-2);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  cursor: pointer;
+}
+
+.row-picker button[aria-pressed="true"] {
+  border-color: var(--role-query);
+  color: var(--role-query);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- legend */
+
+.ramp-legend {
+  display: flex;
+  align-items: center;
+  margin-block-start: var(--space-3);
+  gap: var(--space-2);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+.ramp-legend__bar {
+  width: calc(var(--grid-unit) * 14);
+  height: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.ramp-legend__bar[data-scale="diverging"] {
+  background-image: linear-gradient(
+    to right,
+    var(--div-neg),
+    var(--div-mid),
+    var(--div-pos)
+  );
+}
+
+.ramp-legend__bar[data-scale="sequential"] {
+  background-image: linear-gradient(to right, var(--seq-floor), var(--seq-end));
+}

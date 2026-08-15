@@ -1,246 +1,33 @@
 ---
 import Base from "../layouts/Base.astro";
-import TransformerDiagram from "../components/TransformerDiagram.astro";
-import StageStepper from "../components/StageStepper.astro";
-import ComputationPanel from "../components/ComputationPanel.astro";
-import { TOKENS } from "../lib/toy-example";
-
-const sentence = TOKENS.join(" ");
+import ChapterNav from "../components/ChapterNav.astro";
+import Hero from "../components/Hero.astro";
+import Ch05ScaledDotProduct from "../components/viz/Ch05ScaledDotProduct.tsx";
 ---
 
-<Base title="The Transformer, one stage at a time">
-  <nav class="topbar" aria-label="Primary">
-    <a href="./">Home</a>
-    <a href="#diagram">Jump to Figure 1</a>
-  </nav>
+<Base
+  title="Attention Is All You Need — an interactive explainer"
+  description="The 2017 Transformer paper, worked through on one six-word sentence with numbers small enough to check by hand."
+>
+  <ChapterNav />
 
-  <main class="prose">
-    <h1>The Transformer, one stage at a time</h1>
+  <main>
+    <Hero />
 
-    <p class="standfirst">
-      The encoder half of the Transformer is four ideas stacked on top of one another. This
-      page runs all four of them on a single four-word sentence &mdash; <em>{sentence}</em
-      > &mdash; and shows you the arithmetic at each step, as it happens.
-    </p>
-
-    <h2>Why the encoder has this shape</h2>
-
-    <p>
-      Before 2017, a model that read a sentence read it the way you do: one word after
-      another, carrying a running summary forward. That works, but it makes distance
-      expensive. For the model to relate the first word to the last, information has to
-      survive every step in between, and the further apart two words are, the more
-      chances there are for the connection to wash out.
-    </p>
-
-    <p>
-      The Transformer removes the running summary entirely. Every position looks at every
-      other position in one operation, and how much any position attends to any other is
-      computed from the words themselves. Distance stops being a cost. That single change
-      is what the word <em>attention</em> is doing in the title of the paper this page
-      follows, <a href="https://arxiv.org/pdf/1706.03762" target="_blank" rel="noopener"
-        >&ldquo;Attention Is All You Need&rdquo;</a
-      >.
-    </p>
-
-    <p>
-      Removing the sequential read has a price: with nothing but a bag of vectors, the
-      model has no idea what order the words came in. So order gets added back explicitly,
-      as a fixed pattern layered onto each word. What's left is bookkeeping &mdash; a small
-      network applied to each position on its own, and the whole arrangement repeated a
-      number of times. Those four moves, in that order, are the encoder.
-    </p>
-
-    <h2>Step through it</h2>
-
-    <p>
-      Pick a stage below. The diagram highlights the block you're inside, and the panel
-      beside it does that stage's actual work on the toy sentence. Where a stage has a
-      choice to make &mdash; which position, which query word, which attention head &mdash;
-      the controls are live, and the numbers move when you change them.
-    </p>
-
-    <figure class="figure" id="diagram">
-      <div class="figure__card">
-        <div class="figure__stage">
-          <div class="figure__diagram">
-            <TransformerDiagram />
-          </div>
-          <div class="figure__readout">
-            <ComputationPanel />
-          </div>
-        </div>
-        <div class="figure__controls">
-          <StageStepper />
-        </div>
-      </div>
-      <figcaption>
-        <b>Figure 1.</b> The encoder stack, redrawn. On a wide screen the decoder is drawn
-        beside it, dimmed and inert: it mirrors this same shape &mdash; masked self-attention,
-        attention over the encoder's output, then feed-forward &mdash; but this page has one
-        idea, and the idea is the encoder. On a narrow screen the encoder gets the whole
-        canvas.
-      </figcaption>
-    </figure>
-
-    <h2>The numbers are real</h2>
-
-    <p>
-      Nothing on this page is a screenshot of a model, and nothing is a plausible-looking
-      number typed in by hand. There is a small module of pure functions holding a fixed
-      set of toy weights, and every figure you see is what those functions return when they
-      are run. The attention weights are a genuine softmax over scaled dot products; the
-      feed-forward output is a genuine linear&ndash;ReLU&ndash;linear pass. When a number on
-      screen changes, it changed because a computation ran again.
-    </p>
-
-    <p>
-      They are, of course, <em>toy</em> numbers. Four words, four dimensions per vector, two
-      dimensions per head, weights that were chosen rather than trained. A real encoder works
-      in 512 dimensions and its weights mean something. The mechanism is the same one; the
-      scale is not. If you want the same ideas at more length and with better pictures,
-      <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener"
-        >The Illustrated Transformer</a
-      > is the standard next stop. The diagram here is drawn from scratch in its own style
-      rather than traced from either source.
-    </p>
-
-    <h2>What this leaves out</h2>
-
-    <p>
-      The <span class="term">Add &amp; Norm</span> strips are drawn because the architecture
-      isn't honest without them, but they aren't steppable &mdash; residual connections and
-      layer normalisation are what keep a deep stack trainable, which is a different lesson
-      from the one this page is teaching. The eight heads are eight real, separate
-      projections, but they are toy projections, so don't read meaning into which head
-      prefers which word. And the feed-forward stage is shown operating on a word's raw
-      embedding rather than on what attention actually handed it &mdash; the point there is
-      the shape of the operation, not the full data path.
-    </p>
+    <!--
+      `client:visible` rather than `client:load`: the island's markup is
+      server-rendered either way, so the first beat of every chapter is in the
+      HTML and readable before any JavaScript arrives.
+    -->
+    <Ch05ScaledDotProduct client:visible />
   </main>
+
+  <footer class="footer">
+    <p>
+      Worked from <a href="https://arxiv.org/abs/1706.03762">Vaswani et al.,
+      “Attention Is All You Need” (arXiv:1706.03762)</a>. Every number on this
+      page is computed from the weights it shows; none of them come from a
+      trained model.
+    </p>
+  </footer>
 </Base>
-
-<style>
-  .topbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-5);
-    max-width: 72rem;
-    margin: 0 auto var(--space-7);
-    padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--rule);
-    font-family: var(--font-ui);
-    font-size: var(--text-sm);
-  }
-
-  /*
-   * Breakout grid: prose sits in the centre track at the reading measure, and
-   * anything marked .figure spans all three tracks to escape it.
-   */
-  .prose {
-    display: grid;
-    grid-template-columns: 1fr min(var(--measure), 100%) 1fr;
-    row-gap: var(--space-5);
-  }
-
-  .prose > * {
-    grid-column: 2;
-  }
-
-  .prose > h2 {
-    margin-top: var(--space-5);
-  }
-
-  .standfirst {
-    font-size: var(--text-md);
-    line-height: 1.5;
-    color: var(--ink-2);
-    text-wrap: pretty;
-  }
-
-  .term {
-    font-family: var(--font-ui);
-    font-size: 0.92em;
-  }
-
-  /*
-   * Astro scopes `.prose > *` to `.prose[cid] > [cid]`, which outranks a bare
-   * `.figure[cid]` — so the breakout has to be written as a child selector too
-   * or the figure stays trapped in the measure column.
-   */
-  .prose > .figure {
-    grid-column: 1 / -1;
-    width: min(72rem, 100%);
-    justify-self: center;
-    margin: var(--space-5) 0;
-  }
-
-  .figure__card {
-    display: grid;
-    gap: var(--space-5);
-    padding: var(--space-5);
-    border: 1px solid var(--rule);
-    border-radius: var(--radius-lg);
-    background: var(--surface-figure);
-    box-shadow: var(--shadow-figure);
-  }
-
-  .figure__controls {
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--rule);
-  }
-
-  figcaption {
-    max-width: var(--measure);
-    margin: var(--space-4) auto 0;
-    font-size: var(--text-sm);
-    line-height: 1.55;
-    color: var(--ink-2);
-    text-wrap: pretty;
-  }
-
-  /*
-   * Below the split, .figure__stage dissolves so the controls can sit between the
-   * diagram and the readout: tapping a stage must not push its highlight off-screen.
-   * The diagram then sticks to the top of the card while the panel scrolls under it.
-   */
-  @media (max-width: 899px) {
-    .figure__stage {
-      display: contents;
-    }
-
-    .figure__diagram {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      order: 1;
-      padding-bottom: var(--space-2);
-      background: var(--surface-figure);
-    }
-
-    .figure__diagram :global(svg) {
-      height: 42vh;
-    }
-
-    .figure__controls {
-      order: 2;
-    }
-
-    .figure__readout {
-      order: 3;
-    }
-  }
-
-  @media (min-width: 900px) {
-    .figure__card {
-      padding: var(--space-6);
-    }
-
-    .figure__stage {
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
-      gap: var(--space-6);
-      align-items: center;
-    }
-  }
-</style>
