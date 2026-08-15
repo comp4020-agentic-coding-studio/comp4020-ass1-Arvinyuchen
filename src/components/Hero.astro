@@ -37,11 +37,15 @@ import { tex } from "../lib/viz/tex";
 ---
 
 <header class="hero">
-  <p class="hero__eyebrow num">Vaswani et al., 2017</p>
-
   <h1 class="hero__title">Attention Is All You Need</h1>
 
   <div class="hero__body">
+    {/* Under the title rather than above it. As an eyebrow it owned a row of its
+        own across the hero's full width, which cost 39px at the top of a layout
+        budgeted to one screen; in the body column it costs nothing, because that
+        column is 300px shorter than the figure beside it. */}
+    <p class="hero__eyebrow num">Vaswani et al., 2017</p>
+
     <p class="hero__standfirst">
       The paper that replaced recurrence with a single operation: score every pair
       of words, turn the scores into weights, and mix. Everything below is that

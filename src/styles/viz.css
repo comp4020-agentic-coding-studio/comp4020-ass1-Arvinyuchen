@@ -63,13 +63,14 @@
     gap: 0 var(--space-6);
   }
 
-  /* The eyebrow and the title own their whole line — the figure begins beside the
-   * standfirst, not beside the headline. Auto-placement then puts `.hero__body` in
-   * column 1 and the figure in column 2 of the row below without either needing an
-   * explicit position. */
-  .hero__eyebrow,
+  /* The title owns its whole line — the figure begins beside the body, not beside
+   * the headline. Auto-placement then puts `.hero__body` in column 1 and the figure
+   * in column 2 of the row below without either needing an explicit position. */
   .hero__title {
     grid-column: 1 / -1;
+
+    /* First element in the hero now, so nothing above it to be separated from. */
+    margin-block-start: 0;
   }
 
   .hero__body {
@@ -86,7 +87,7 @@
 }
 
 .hero__eyebrow {
-  margin: 0;
+  margin: var(--space-4) 0 0;
   color: var(--ink-3);
   font-size: var(--text-sm);
   letter-spacing: 0.2em;
@@ -100,7 +101,7 @@
 
 .hero__standfirst {
   max-width: var(--measure-lead);
-  margin-block-start: var(--space-4);
+  margin-block-start: var(--space-3);
   color: var(--ink-2);
   font-size: var(--text-md);
   text-wrap: pretty;
