@@ -307,7 +307,7 @@ contract — it never executes scripts. **Scope every chapter-specific selector 
 `[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
 and assertions pass for the wrong reason. That happened.
 
-`pnpm test:e2e` (Playwright, 118 tests over 3 projects: 1920×1080, 390×844, and
+`pnpm test:e2e` (Playwright, 123 tests over 3 projects: 1920×1080, 390×844, and
 reduced motion) is what actually verifies interaction, and it is the gate to run
 before shipping. It is outside CI on purpose: it needs a browser download, and a
 flake inside `check` would block the `deploy` job that depends on it.
@@ -493,6 +493,22 @@ flex item's default minimum is its content size, so without it the 6×6 score gr
 sized the figure column to 638px inside a 390px viewport and dragged the whole
 document sideways. `overflow-x` on the matrix can only work once its ancestors are
 allowed to be narrower than their contents.
+
+**The nav, the hero and the chapters share one max-width** — 180 `--grid-unit`s,
+with the same `padding-inline` — so the nav's first glyph sits on the title's left
+edge. `.glyph` was capped at 130 for months: two centred boxes of different widths
+never line up, and at 1728 that started the nav 200px right of the title while
+looking entirely deliberate in the source.
+
+**The hero is budgeted to one screen at 1920 × 1080**: nav 76 + padding 48 +
+eyebrow and title 140 + figure block 742 + padding 48 = 1054. It was 1274, so the
+figures the hero exists to show sat below the fold at 100% zoom on the viewport
+this is marked at. The budget is whitespace only, which means a couple of added
+lines of hero copy would spend it — an e2e test asserts `.hero`'s bottom against
+the viewport height so that arrives as a failure rather than as a surprise at a
+crit. A window shorter than ~1054px still scrolls; the alternative was sizing the
+figure from viewport height, which always fits and pulls its right edge back off
+the chapters' edge, and the alignment was the thing asked for.
 
 **A width defect is measured on the ink, not on the container.** `.hero` and
 `.chapter` computed to identical boxes --- same `max-width`, same padding, same left

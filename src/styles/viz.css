@@ -18,11 +18,18 @@
  * wedged it into the middle of the vertical flow and left a dead gap under the
  * equation — the grouping has to be all-of-the-hero against the figure, not one
  * element of it. */
+
+/* The hero is budgeted to one screen at 1920 × 1080, the viewport this is marked
+ * at: nav 76 + padding 48 + eyebrow and title 140 + figure block 742 + padding 48
+ * = 1054. It held 1274 before, so the figures the hero exists to show were cut off
+ * at 100% zoom. The budget is whitespace only — the figure block is untouched, so
+ * its right edge stays on the chapters' — which also means a few lines of hero copy
+ * would spend it. An e2e test asserts the fold. */
 .hero {
   display: grid;
   max-width: calc(var(--grid-unit) * 180);
   margin-inline: auto;
-  padding-block: var(--space-8) var(--space-7);
+  padding-block: var(--space-6);
   padding-inline: var(--space-4);
   gap: var(--space-6);
 }
@@ -133,8 +140,10 @@
    * against. */
 
   /* Aligns roughly with the top of the standfirst on desktop, and separates the
-   * figure from the note when the columns stack. */
-  margin: var(--space-6) 0 0;
+   * figure from the note when the columns stack. The figure's own margin rather
+   * than a row gap, so trimming it for the one-screen budget shortens the tall
+   * column without moving the standfirst. */
+  margin: var(--space-4) 0 0;
 }
 
 /* One column until the hero splits; the two-column composition below is what lets
@@ -243,9 +252,15 @@
 .glyph {
   display: flex;
   align-items: center;
-  max-width: calc(var(--grid-unit) * 130);
+
+  /* The same 180 units as `.hero` and `.chapter`, with the same inline padding, so
+   * the nav's first ink sits on the title's left edge. At 130 it was a narrower
+   * centred box inside a wider one, which starts the nav 200px right of the title
+   * at 1728 and reads as deliberate. Two centred containers with different
+   * max-widths never line up, and nothing in the page said they should differ. */
+  max-width: calc(var(--grid-unit) * 180);
   margin-inline: auto;
-  padding-block: var(--space-3);
+  padding-block: var(--space-2);
   padding-inline: var(--space-4);
   gap: var(--space-3);
   border-block-end: var(--hairline) solid var(--rule);

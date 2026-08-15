@@ -385,6 +385,44 @@ test("the hero's figure reaches the same edge the chapters' figures do", async (
   ).toBeLessThanOrEqual(1);
 });
 
+test("the nav starts where the title starts", async ({ page }) => {
+  // Two centred containers with different max-widths never line up, and the
+  // difference is invisible in the source: `.glyph` capped at 130 grid-units while
+  // `.hero` and `.chapter` cap at 180, which put the nav's first ink 200px right of
+  // the title at 1728 and looked deliberate.
+  await page.goto("./");
+  const delta = await page.evaluate(() => {
+    const left = (sel: string) => document.querySelector(sel)!.getBoundingClientRect().left;
+    // The glyph grid, not `.glyph` — the nav's box always spanned the viewport; it
+    // is the first thing a reader sees that has to sit on the title's edge.
+    return Math.round(Math.abs(left(".glyph__grid") - left(".hero__title")));
+  });
+
+  expect(delta, `nav and title left edges are ${delta}px apart`).toBeLessThanOrEqual(1);
+});
+
+test("the whole hero fits one screen at the marking viewport", async ({ page }) => {
+  // 1920 × 1080 is where this is marked, and the hero's job is to show the figures.
+  // It was 1274px tall against that 1080, so the diagrams were below the fold at
+  // 100% zoom and nothing in the suite noticed — the page does not overflow
+  // sideways, nothing is covered, every other check is green.
+  //
+  // The budget is whitespace only, which means a few added lines of hero copy would
+  // spend it. That is exactly why this is a test and not a comment.
+  const viewport = page.viewportSize()!;
+  test.skip(viewport.width < 900, "the phone hero is a scrolling column by design");
+
+  await page.goto("./");
+  const bottom = await page.evaluate(() =>
+    Math.round(document.querySelector(".hero")!.getBoundingClientRect().bottom),
+  );
+
+  expect(
+    bottom,
+    `the hero ends at ${bottom} in a ${viewport.height}px viewport`,
+  ).toBeLessThanOrEqual(viewport.height);
+});
+
 test("the hero's two figure columns end level", async ({ page }) => {
   // The composition is what lets the block fill its column without one 990px-tall
   // image setting the height, and it only works while the columns stay balanced —
