@@ -1,0 +1,10 @@
+{
+  "recurse": true,
+  "silent": true,
+  "retry": true,
+  "timeout": 20000,
+  "skip": [
+    "^https?://(?!localhost|127\\.0\\.0\\.1)",
+    "^/comp4020-ass1-Arvinyuchen/_astro/"
+  ]
+}

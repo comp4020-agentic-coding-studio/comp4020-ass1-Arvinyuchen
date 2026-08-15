@@ -1,4 +1,5 @@
 {
   "env": { "browser": true, "es2024": true },
+  "plugins": ["react"],
   "ignorePatterns": ["dist", "node_modules"]
 }

@@ -3,8 +3,10 @@
   "compilerOptions": {
     "types": ["node"],
     "verbatimModuleSyntax": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
-  "include": [".astro/types.d.ts", "**/*.ts", "**/*.astro", "spec"],
+  "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro", "spec"],
   "exclude": ["dist"]
 }

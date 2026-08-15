@@ -3,6 +3,11 @@ dist/
 .astro/
 *.log
 
+# Playwright's run artefacts. The specs are tracked; their output isn't.
+test-results/
+playwright-report/
+blob-report/
+
 # editor and OS junk
 .DS_Store
 ._*
