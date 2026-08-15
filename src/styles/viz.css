@@ -355,9 +355,12 @@
   color: var(--role, var(--ink-3));
   font-size: var(--text-xs);
   font-weight: 600;
-  letter-spacing: 0.1em;
+
+  /* No `text-transform: uppercase` here, deliberately. Captions carry maths, and
+   * uppercasing turned "√dₖ" into "√Dₖ" — a different symbol. The label reads as
+   * a label from its size, weight and tracking instead. */
+  letter-spacing: 0.08em;
   text-align: start;
-  text-transform: uppercase;
 }
 
 .matrix__col-head,
@@ -1040,4 +1043,34 @@ tr[data-dimmed="true"] {
 
 .curve__aside {
   color: var(--ink-3);
+}
+
+/*
+ * Below the split the expanded fraction is taller than it is wide, so the
+ * decorative parentheses and the trailing V wrap onto their own lines and read as
+ * orphans rather than as part of the equation. Narrow screens get the same terms
+ * stacked in reading order instead, with the parens dropped — they were
+ * `aria-hidden` anyway, so nothing is lost to a screen reader, and the `sr-only`
+ * reading of the whole equation inside Formula.tsx still carries it.
+ */
+@media (width < 900px) {
+  .formula:has(.formula__numerator[data-expanded="true"]) {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .formula:has(.formula__numerator[data-expanded="true"]) .formula__paren {
+    display: none;
+  }
+
+  .formula:has(.formula__numerator[data-expanded="true"]) .formula__fn {
+    align-self: flex-start;
+    font-size: var(--text-md);
+  }
+
+  .formula:has(.formula__numerator[data-expanded="true"]) .formula__v {
+    align-self: flex-start;
+    color: var(--role-value);
+    font-size: var(--text-md);
+  }
 }
