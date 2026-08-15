@@ -33,14 +33,23 @@
 
 @media (width >= 900px) {
   .hero {
-    /* The text column is sized to the measure its prose actually uses, not to
-     * `1fr`. As `1fr` it swallowed all the leftover width — the standfirst wraps at
-     * 587px but the track was 1072px, so the figure was pushed to the far right
-     * edge with 485px of dead space between them. `justify-content: start` then
-     * keeps both tracks hugging the left instead of spreading. */
-    grid-template-columns: minmax(0, calc(var(--grid-unit) * 84)) auto;
+    /* The tracks fill the container, exactly as `.chapter__body`'s do, so the hero
+     * and the chapters share an outer content edge. They did not: with the second
+     * track at `auto` and `justify-content: start` the tracks summed to 1040px and
+     * left 352px dead at the right, so the homepage visibly stopped short of where
+     * every chapter reached.
+     *
+     * The figure is kept beside the text by `justify-self` on the item, not by
+     * shrinking the grid — see `.hero__figure`. An earlier attempt used `1fr` with
+     * a stretching figure and put 485px of dead space between text and image, which
+     * is what `justify-content: start` was papering over.
+     *
+     * Column 1 stays at 672px rather than copying the chapters' 32ch: the hero
+     * standfirst wraps at 587px and the token row runs to ~640px, and a 362px track
+     * would wreck both. So the hero's figure column starts further right than the
+     * chapters' — only the outer edges line up, which is the trade. */
+    grid-template-columns: minmax(0, calc(var(--grid-unit) * 84)) minmax(0, 1fr);
     align-items: start;
-    justify-content: start;
 
     /* Columns are gapped; rows are not, because the vertical rhythm already comes
      * from each element's own margin and a row gap would double it. */
@@ -107,6 +116,10 @@
 
 .hero__figure {
   max-width: calc(var(--grid-unit) * 40);
+
+  /* The column is wide so the grid fills its container; the figure is not, so it
+   * stays next to the prose instead of drifting to the right edge. */
+  justify-self: start;
 
   /* Aligns roughly with the top of the standfirst on desktop, and separates the
    * figure from the note when the columns stack. */
@@ -274,12 +287,6 @@
   padding-inline: var(--space-4);
 }
 
-.chapter__text {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-}
-
 .chapter__head {
   max-width: var(--measure);
   margin-block-end: var(--space-6);
@@ -355,36 +362,42 @@
     gap: var(--space-6);
   }
 
-  .chapter__text {
+  .chapter__prose {
     grid-row: 1;
     grid-column: 1;
-  }
 
-  .chapter__prose {
-    /* Was 60vh / 30vh, which made the document 39,000px tall at 1728 wide: a lot
-     * of scrolling between changes, then everything at once. */
+    /* The gap is what gives each beat room to be read on its own before the next
+     * one takes over, so it is viewport-relative and large. Was 60vh with 30vh
+     * padding, which made the document 39,000px tall at 1728: a lot of scrolling
+     * between changes, then everything at once.
+     *
+     * Do not drop this and inherit the base 72px. Beat tops then sit 184px apart
+     * instead of ~590px, the whole chapter collapses to about one screen, and
+     * scrolling rips through every stage in two wheel clicks. */
     gap: 44vh;
-    padding-block: 20vh;
+
+    /* Leading padding is zero. It was 20vh — 216px at 1080 — which put the first
+     * beat well below the figure it describes. The trailing padding stays so the
+     * last beat can still reach the active line. */
+    padding-block: 0 20vh;
   }
 
   .chapter__figure {
     grid-row: 1;
     grid-column: 2;
 
-    /* Centred in the viewport rather than pinned to the top, so the figure and
-     * the beat describing it are in the eye's path together.
+    /* Starts level with the first beat and sticks just below the viewport edge as
+     * the beats scroll past. It used to be a viewport-tall box centring its own
+     * contents, which put the figure at the middle of the screen while the chapter
+     * heading sat at the top — so arriving at a chapter showed a heading and a
+     * diagram that looked unrelated.
      *
-     * Centred by being a viewport-tall sticky box that centres its own contents —
-     * NOT by `top: 50%; translate: 0 -50%`. That is the obvious way to do it and it
-     * is wrong here: sticky positioning is clamped to its containing block, but a
-     * transform is applied afterwards and is not, so the figure slid up out of its
-     * own chapter and painted its opaque card over the hero. It cost the homepage
-     * 191px of its content and nothing in the CSS looked suspect. */
-    top: 0;
-    display: flex;
-    height: 100vh;
-    flex-direction: column;
-    justify-content: center;
+     * Whatever replaces this, do not centre it with `top: 50%; translate: 0 -50%`.
+     * Sticky positioning is clamped to its containing block; a transform is applied
+     * afterwards and is not, so the figure slid out of its own chapter and painted
+     * its opaque card over the hero. That cost the homepage 191px of content and
+     * nothing in the CSS looked wrong. */
+    top: var(--space-6);
     padding-block: 0;
     background-color: transparent;
   }

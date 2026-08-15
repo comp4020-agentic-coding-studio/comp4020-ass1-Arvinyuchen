@@ -58,29 +58,44 @@ export function useScrollStage(count: number): ScrollStage {
     const nodes = beats.current.filter((node): node is HTMLElement => node !== null);
     if (nodes.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (manualRef.current) return;
-        // Pick the entry closest to the middle of the viewport rather than the
-        // first intersecting one: with short beats several are visible at once,
-        // and "first" changes the figure a beat too early.
-        const middle = window.innerHeight / 2;
-        let best: { index: number; distance: number } | undefined;
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const index = nodes.indexOf(entry.target as HTMLElement);
-          if (index < 0) continue;
-          const box = entry.boundingClientRect;
-          const distance = Math.abs(box.top + box.height / 2 - middle);
-          if (!best || distance < best.distance) best = { index, distance };
-        }
-        if (best) setStageRaw(best.index);
-      },
-      // A band across the middle of the viewport is the "active" zone.
-      { rootMargin: "-35% 0px -35% 0px", threshold: [0, 0.5, 1] },
-    );
+    // The active beat is the last one whose top has crossed a line partway down
+    // the viewport. Measured fresh from the live rects every time, and the
+    // observer is only a signal that something moved.
+    //
+    // Reading `entry.boundingClientRect` off the callback's own entries was the
+    // bug. Those rects are sampled when the intersection changed, not when the
+    // callback runs, and only the entries that changed are in the batch — so
+    // arriving at a chapter by anchor let it latch whichever beat happened to be
+    // crossing mid-jump, and then no further intersection change ever came to
+    // correct it. Chapter 2 opened on beat 2 at 1920 while opening on beat 1 at
+    // 1440, from the same markup.
+    const LINE = 0.45;
+
+    const recompute = () => {
+      if (manualRef.current) return;
+      const line = window.innerHeight * LINE;
+      let next = 0;
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i]!.getBoundingClientRect().top <= line) next = i;
+      }
+      setStageRaw(next);
+    };
+
+    const observer = new IntersectionObserver(recompute, {
+      // Generous band: this only needs to fire often enough, since the decision is
+      // made by measuring rather than from the entries themselves.
+      rootMargin: "0px",
+      threshold: [0, 0.25, 0.5, 0.75, 1],
+    });
 
     for (const node of nodes) observer.observe(node);
+
+    // Once on mount, so a chapter reached by anchor or reload is correct before any
+    // intersection changes.
+    recompute();
+
+    // A resize moves the line and every beat with it.
+    window.addEventListener("resize", recompute);
 
     // Deliberate reader input hands control back to the observer.
     //
@@ -109,6 +124,7 @@ export function useScrollStage(count: number): ScrollStage {
 
     return () => {
       observer.disconnect();
+      window.removeEventListener("resize", recompute);
       window.removeEventListener("wheel", release);
       window.removeEventListener("touchmove", release);
       window.removeEventListener("keydown", onKey);

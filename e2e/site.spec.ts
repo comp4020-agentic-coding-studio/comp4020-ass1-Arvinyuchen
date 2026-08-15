@@ -297,7 +297,12 @@ test("no figure ever paints over prose", async ({ page }) => {
 
     const figures = [...document.querySelectorAll(".chapter__viz")];
     const prose = [
-      ...document.querySelectorAll(".hero__standfirst, .hero__sentence, .hero__note, .beat"),
+      ...document.querySelectorAll(
+        // `.chapter__head` and `.chapter__thesis` matter most: the head sits above
+        // the grid, which is the exact position the sticky figure used to cover, and
+        // the original test predated that layout so it never guarded them.
+        ".hero__standfirst, .hero__sentence, .hero__note, .beat, .chapter__head, .chapter__thesis",
+      ),
     ];
     const out: string[] = [];
     for (const figure of figures) {
@@ -320,6 +325,59 @@ test("no figure ever paints over prose", async ({ page }) => {
   });
 
   expect(collisions, collisions.join("; ")).toEqual([]);
+});
+
+test("each chapter's first beat starts level with its figure", async ({ page }) => {
+  // The property this layout exists for: landing on a chapter should put its text
+  // and its diagram on the same line. It was ~300px out, because the heading lived
+  // inside the text column and the prose carried 20vh of leading padding.
+  //
+  // Stated as a test because it is invisible to every other check here — nothing
+  // overflows, nothing is covered, no contrast fails. It just reads as two
+  // unrelated things stacked at different heights.
+  test.skip(page.viewportSize()!.width < 900, "single column below the split");
+
+  await page.goto("./");
+  for (const [i, slug] of CHAPTERS.entries()) {
+    const id = String(i + 1).padStart(2, "0");
+    await page.goto(`./#${slug}`);
+    await page.waitForTimeout(400);
+
+    // The FIRST BEAT, not `.chapter__prose`. Padding sits inside the border box, so
+    // the container's top does not move when leading padding is added — this test
+    // passed with the 20vh regression restored until it was checked against the
+    // element that actually moves.
+    const delta = await page.evaluate((chapter) => {
+      const root = document.querySelector(`[data-chapter="${chapter}"]`)!;
+      const beat = root.querySelector(".beat")!.getBoundingClientRect();
+      const figure = root.querySelector(".chapter__figure")!.getBoundingClientRect();
+      return Math.abs(beat.top - figure.top);
+    }, id);
+
+    expect(
+      delta,
+      `chapter ${id}: first beat and figure are ${delta}px apart`,
+    ).toBeLessThanOrEqual(4);
+  }
+});
+
+test("the first beat is the active one when a chapter is opened directly", async ({ page }) => {
+  // Arriving by anchor used to latch the wrong stage: the observer read rects off
+  // its own callback entries, which are sampled when the intersection changed
+  // rather than when the callback runs, so a chapter opened mid-jump could settle on
+  // beat 2 at one viewport and beat 1 at another from identical markup.
+  for (const [i, slug] of CHAPTERS.entries()) {
+    const id = String(i + 1).padStart(2, "0");
+    await page.goto(`./#${slug}`);
+    await page.waitForTimeout(400);
+
+    const active = page.locator(`[data-chapter="${id}"] .beat[data-stage-active="true"]`);
+    await expect(active, `chapter ${id} should have exactly one active beat`).toHaveCount(1);
+    await expect(
+      page.locator(`[data-chapter="${id}"] [data-stage-index="0"]`),
+      `chapter ${id} should open on its first beat`,
+    ).toHaveAttribute("aria-current", "step");
+  }
 });
 
 test("dark mode renders with readable text", async ({ page }) => {

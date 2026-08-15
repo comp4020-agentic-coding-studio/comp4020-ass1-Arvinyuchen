@@ -30,10 +30,22 @@ export function ChapterFrame({ chapter, children, vizLabel }: ChapterFrameProps)
 
   return (
     <section className="chapter" data-chapter={chapter.id} id={chapter.slug}>
-      {/* The heading sits inside the grid, in the same column as the prose.
-          Outside it, the sticky figure — which is vertically centred in the
-          viewport at desktop widths — floated across the thesis and covered it,
-          because the heading was free to run the full width of the chapter. */}
+      {/* The heading sits above the grid and owns its full width, mirroring the
+          hero, so the prose and the figure below it can start on the same line.
+          It lived inside the text column until now because the sticky figure used
+          to paint over it — but that was `translate: 0 -50%` escaping the
+          containing block sticky is clamped to, and a `top`-based sticky element
+          never rises above its static position. The `no figure ever paints over
+          prose` e2e spec covers the regression. */}
+      <header className="chapter__head">
+        <p className="chapter__eyebrow num">
+          <span className="sr-only">Chapter </span>
+          {String(chapter.number).padStart(2, "0")}
+        </p>
+        <h2>{chapter.title}</h2>
+        <p className="chapter__thesis">{chapter.thesis}</p>
+      </header>
+
       <div className="chapter__body">
         <div className="chapter__figure">
           <div className="chapter__viz" data-viz={chapter.slug}>
@@ -97,29 +109,18 @@ export function ChapterFrame({ chapter, children, vizLabel }: ChapterFrameProps)
           </p>
         </div>
 
-        <div className="chapter__text">
-          <header className="chapter__head">
-            <p className="chapter__eyebrow num">
-              <span className="sr-only">Chapter </span>
-              {String(chapter.number).padStart(2, "0")}
+        <div className="chapter__prose">
+          {chapter.beats.map((beat, i) => (
+            <p
+              key={beat.id}
+              ref={registerBeat(i)}
+              className="beat"
+              data-stage={beat.id}
+              data-stage-active={stage === i ? "true" : "false"}
+            >
+              {beat.body}
             </p>
-            <h2>{chapter.title}</h2>
-            <p className="chapter__thesis">{chapter.thesis}</p>
-          </header>
-
-          <div className="chapter__prose">
-            {chapter.beats.map((beat, i) => (
-              <p
-                key={beat.id}
-                ref={registerBeat(i)}
-                className="beat"
-                data-stage={beat.id}
-                data-stage-active={stage === i ? "true" : "false"}
-              >
-                {beat.body}
-              </p>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
     </section>
