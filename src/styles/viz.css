@@ -151,6 +151,7 @@
 
 .pair {
   display: flex;
+  max-width: 100%;
   flex-wrap: wrap;
   justify-content: center;
   margin-block-start: var(--space-4);
@@ -196,11 +197,19 @@
   position: sticky;
   top: 0;
   z-index: 1;
+
+  /* A grid item's default min-width is `auto`, meaning its content size — so
+   * without this the figure column sized itself to the 6-column score grid
+   * (638px) inside a 390px viewport and dragged the whole document sideways.
+   * The matrix's own `overflow-x` can only take effect once its ancestors are
+   * allowed to be narrower than their contents. */
+  min-width: 0;
   padding-block: var(--space-3);
   background-color: var(--surface);
 }
 
 .chapter__viz {
+  min-width: 0;
   padding: var(--space-4);
   border: var(--hairline) solid var(--rule);
   border-radius: var(--radius-lg);
@@ -210,8 +219,9 @@
 
 .chapter__prose {
   display: flex;
-  flex-direction: column;
+  min-width: 0;
   max-width: var(--measure);
+  flex-direction: column;
   gap: var(--space-7);
 }
 
@@ -317,7 +327,16 @@
 /* ---------------------------------------------------------------- matrix */
 
 .matrix {
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
+
+  /* Both needed. `overflow-x` lets a wide grid scroll inside its own box instead
+   * of widening the page; `min-width: 0` is what actually allows it to shrink,
+   * because a flex item's default min-width is its content size and a 6-column
+   * table's content size is wider than a 390px phone. Without the pair, the
+   * score grid pushed the whole document sideways at the phone viewport — which
+   * only showed up once an e2e spec resized mid-interaction with the grid open. */
   overflow-x: auto;
 }
 
@@ -330,6 +349,8 @@
 }
 
 .matrix__caption {
+  width: min-content;
+  min-width: 100%;
   margin-block-end: var(--space-2);
   color: var(--role, var(--ink-3));
   font-size: var(--text-xs);
@@ -455,6 +476,7 @@ tr[data-dimmed="true"] {
 
 .formula {
   display: flex;
+  max-width: 100%;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
@@ -483,7 +505,14 @@ tr[data-dimmed="true"] {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
   gap: var(--space-1);
+}
+
+.formula__numerator {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .formula__numerator[data-expanded="true"] {
@@ -766,6 +795,7 @@ tr[data-dimmed="true"] {
 
 .projection {
   display: flex;
+  max-width: 100%;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
@@ -823,6 +853,7 @@ tr[data-dimmed="true"] {
 
 .spine {
   display: flex;
+  max-width: 100%;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
@@ -1005,4 +1036,8 @@ tr[data-dimmed="true"] {
 
 .softmax-steps tfoot td {
   border-block-end: 0;
+}
+
+.curve__aside {
+  color: var(--ink-3);
 }

@@ -60,6 +60,16 @@ export default function Ch03PositionalEncoding() {
                   <figure key={pair} className="curve" data-curve-pair={pair}>
                     <figcaption className="curve__caption">
                       dims {pair * 2} and {pair * 2 + 1} — wavelength {fmt(divisor, 0)}
+                      {divisor > SEQ_LEN ? (
+                        // Worth saying out loud: over six positions this pair looks
+                        // almost flat, which reads as a broken chart rather than as
+                        // the intended behaviour.
+                        <span className="curve__aside">
+                          {" "}
+                          — barely moves across six words, and is not meant to. The slow
+                          pairs are what separate position 400 from position 401.
+                        </span>
+                      ) : null}
                     </figcaption>
                     <svg
                       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
