@@ -41,10 +41,58 @@
   text-wrap: pretty;
 }
 
+/* The equation and the paper's own figure sit side by side: the equation is the
+ * mechanism, the diagram is where it lives. Stacked below the split, where two
+ * columns would leave neither one legible. */
+.hero__pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-block-start: var(--space-6);
+  gap: var(--space-6);
+}
+
 .hero__formula {
   justify-content: flex-start;
-  margin-block-start: var(--space-6);
   font-size: var(--text-xl);
+}
+
+.hero__caption {
+  max-width: var(--measure-lead);
+  margin-block-start: var(--space-3);
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+
+.hero__figure {
+  max-width: calc(var(--grid-unit) * 40);
+  margin: 0;
+}
+
+.hero__figure-img {
+  width: 100%;
+  height: auto;
+  padding: var(--space-3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--radius-md);
+
+  /* The figure is line art on white; on the vellum ground it needs its own
+   * surface rather than floating. */
+  background-color: var(--surface-raised);
+}
+
+.hero__figure-caption {
+  margin-block-start: var(--space-2);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  line-height: var(--leading-prose);
+  text-wrap: pretty;
+}
+
+@media (width < 900px) {
+  .hero__figure {
+    max-width: calc(var(--grid-unit) * 32);
+  }
 }
 
 .hero__sentence {
@@ -1223,4 +1271,22 @@ tr[data-dimmed="true"] {
   .curve {
     width: 78%;
   }
+}
+
+/* ---------------------------------------------------------------- radical */
+
+/*
+ * Square roots are MathML `<msqrt>`; see the note in Sqrt.tsx for why neither
+ * U+221A nor `text-decoration: overline` can do the job. All that is needed here
+ * is to make the element inherit the equation face instead of the browser's
+ * default math font, so the radical matches the rest of the formula.
+ */
+.sqrt {
+  font-family: var(--font-math);
+  font-style: italic;
+}
+
+.sqrt msqrt {
+  /* A touch of breathing room between the hook and what it covers. */
+  padding-inline-end: 0.06em;
 }

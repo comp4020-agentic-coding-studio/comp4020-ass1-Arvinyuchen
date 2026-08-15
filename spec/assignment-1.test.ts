@@ -351,6 +351,48 @@ describe("chapter 5, the scaled dot-product lab", () => {
   });
 });
 
+describe("built assets resolve on disk", () => {
+  // linkinator has to skip `_astro/` URLs: they are base-prefixed, correct once
+  // deployed, and unresolvable under CI's crawl of the on-disk tree. That skip is
+  // load-bearing but it opens a hole — a genuinely missing asset would pass. This
+  // closes it, since JSDOM is already reading the built page.
+  //
+  // Found the hard way: adding the paper's figure produced an `<img>` whose
+  // base-prefixed src linkinator *did* check (unlike `<script src>`, which it never
+  // checks at all), and the links step failed.
+  const BASE = "/comp4020-ass1-Arvinyuchen";
+
+  it("points every base-prefixed asset at a file that exists", () => {
+    const doc = loadBuiltPage();
+    const urls = new Set<string>();
+    for (const node of doc.querySelectorAll("img[src], script[src], link[href]")) {
+      const url = node.getAttribute("src") ?? node.getAttribute("href") ?? "";
+      if (url.startsWith(`${BASE}/`)) urls.add(url);
+    }
+
+    expect(urls.size, "no base-prefixed assets found — has the build changed?").toBeGreaterThan(0);
+
+    for (const url of urls) {
+      const onDisk = resolve("dist", url.slice(BASE.length + 1));
+      expect(existsSync(onDisk), `${url} has no file at ${onDisk}`).toBe(true);
+    }
+  });
+
+  it("gives the paper's figure alt text and a credit", () => {
+    const doc = loadBuiltPage();
+    const img = doc.querySelector(".hero__figure-img");
+    expect(img, "the hero figure is missing").not.toBeNull();
+    expect(img!.getAttribute("alt")!.length, "alt text must describe the figure").toBeGreaterThan(
+      80,
+    );
+
+    const caption = doc.querySelector(".hero__figure-caption");
+    expect(caption, "a reproduced figure needs a credit").not.toBeNull();
+    expect(caption!.textContent).toContain("Vaswani");
+    expect(caption!.querySelector('a[href*="arxiv.org"]')).not.toBeNull();
+  });
+});
+
 describe("accessibility floor", () => {
   it("labels every matrix", () => {
     const doc = loadBuiltPage();

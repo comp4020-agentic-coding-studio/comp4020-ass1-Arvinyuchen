@@ -6,6 +6,6 @@
   "checkFragments": true,
   "skip": [
     "^https?://(?!localhost|127\\.0\\.0\\.1)",
-    "^/comp4020-ass1-Arvinyuchen/_astro/"
+    "_astro/"
   ]
 }

@@ -9,6 +9,7 @@ import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Formula, type Slot } from "./primitives/Formula.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
 import { Reveal } from "./primitives/Reveal.tsx";
+import { SqrtDk } from "./primitives/Sqrt.tsx";
 import { TermExpansion } from "./primitives/TermExpansion.tsx";
 
 // Chapter 5. The one the page is built around.
@@ -54,13 +55,14 @@ export default function Ch05ScaledDotProduct() {
         <>
           <Formula
             active={SLOT_BY_STAGE[stage] ?? null}
-            divisorLabel={scaled ? "√dₖ" : null}
+            divisor={scaled ? <SqrtDk /> : null}
+            divisorLabel={scaled ? "the square root of d sub k" : null}
             qk={
               stage >= 3 ? (
                 <Matrix
                   name="scores"
                   rows={scores}
-                  label={scaled ? "QKᵀ ÷ √dₖ — scores" : "QKᵀ — raw scores"}
+                  label={scaled ? "QKᵀ divided by √(dₖ) — scores" : "QKᵀ — raw scores"}
                   rowLabels={tokens}
                   colLabels={tokens}
                   scale="diverging"

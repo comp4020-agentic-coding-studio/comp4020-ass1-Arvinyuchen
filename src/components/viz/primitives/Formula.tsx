@@ -17,15 +17,17 @@ export interface FormulaProps {
   active?: Slot | null;
   /** Rendered inside the QKᵀ slot. When absent the slot shows the glyph. */
   qk?: ReactNode;
-  /** The √d_k denominator, or null when the reader has switched scaling off —
-   * in which case the fraction collapses to a bare numerator, which is exactly
-   * what the maths does. */
+  /** The denominator, or null when the reader has switched scaling off — in which
+   * case the fraction collapses to a bare numerator, which is exactly what the
+   * maths does. A node rather than a string so it can carry a real radical. */
+  divisor: ReactNode | null;
+  /** Spoken reading of the divisor, for the equation's `sr-only` summary. */
   divisorLabel: string | null;
   /** Rendered after the closing bracket. */
   v?: ReactNode;
 }
 
-export function Formula({ active = null, qk, divisorLabel, v }: FormulaProps) {
+export function Formula({ active = null, qk, divisor, divisorLabel, v }: FormulaProps) {
   const reduced = useReducedMotion();
   const transition = reduced ? { duration: 0 } : { duration: 0.52, ease: [0.2, 0.6, 0.2, 1] as const };
 
@@ -62,13 +64,13 @@ export function Formula({ active = null, qk, divisorLabel, v }: FormulaProps) {
           )}
         </motion.span>
 
-        {divisorLabel ? (
+        {divisor ? (
           <motion.span
             className="formula__denominator math"
             layout={!reduced}
             transition={transition}
           >
-            {divisorLabel}
+            {divisor}
           </motion.span>
         ) : null}
       </motion.span>
