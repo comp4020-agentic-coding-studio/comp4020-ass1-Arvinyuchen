@@ -89,7 +89,7 @@
   --surface-sunken: #e3e9ef;
   --ink: #12181f;
   --ink-2: #46525e;
-  --ink-3: #75828f;
+  --ink-3: #5d6874;
   --rule: #d3dce4;
   --rule-strong: #b3c0cc;
   --grid-line: #dde5ec;
@@ -102,9 +102,22 @@
 
   /* magnitude: sequential, for probabilities on a fixed 0 to 1 domain.
    * One hue, light to dark. Components set --t in [0,1] and the ramp is mixed
-   * against the figure surface, so "near zero" recedes into the paper. */
-  --seq-end: #184f95;
-  --seq-floor: #cde2fb;
+   * against the figure surface, so "near zero" recedes into the paper.
+   *
+   * The pole is chosen for the highest chroma available at a luminance --ink
+   * still clears 4.5:1 against. Contrast depends only on luminance, so the first
+   * capped version was needlessly washed out: holding luminance and raising
+   * chroma took the ramp from 133 to 188 on a crude chroma proxy at the same
+   * measured 4.9:1. Both arms of the diverging scale sit at nearly the same
+   * luminance so neither reads as heavier than the other.
+   *
+   * The dark end is capped so that --ink still clears 4.5:1 against it. It used
+   * to run to #184f95 and cell text flipped to white past a threshold, which
+   * axe-core found failing on 54 cells: in the band either side of the flip the
+   * fill is too dark for dark text and too light for white. Capping the pole
+   * means one ink works at every step and the flip is gone. */
+  --seq-end: #1a8fd6;
+  --seq-floor: #dce9f9;
 
   /* magnitude: diverging, for signed values. Two poles and a neutral grey
    * midpoint, so zero reads as "nothing" rather than as a colour. Positive is
@@ -112,8 +125,8 @@
    * therefore darken in the same direction across chapters, which is worth more
    * than matching the convention that warm means large. The legend says which
    * is which. */
-  --div-pos: #1c5cab;
-  --div-neg: #b8342f;
+  --div-pos: #1a8fd6;
+  --div-neg: #e8564a;
   --div-mid: #eceff2;
 
   /* link colour, deliberately distinct from all four identity hues so a link
@@ -170,10 +183,10 @@
     --role-key: #0f9b6c;
     --role-value: #d2621f;
     --role-position: #a8317a;
-    --seq-end: #86b6ef;
-    --seq-floor: #10305c;
-    --div-pos: #5598e7;
-    --div-neg: #e06a63;
+    --seq-end: #0a5fbf;
+    --seq-floor: #1a2430;
+    --div-pos: #0a5fbf;
+    --div-neg: #c2291c;
     --div-mid: #232b34;
     --accent: #6faae8;
     --accent-strong: #9cc6f2;
@@ -198,10 +211,10 @@
   --role-key: #0f9b6c;
   --role-value: #d2621f;
   --role-position: #a8317a;
-  --seq-end: #86b6ef;
-  --seq-floor: #10305c;
-  --div-pos: #5598e7;
-  --div-neg: #e06a63;
+  --seq-end: #0a5fbf;
+  --seq-floor: #1a2430;
+  --div-pos: #0a5fbf;
+  --div-neg: #c2291c;
   --div-mid: #232b34;
   --accent: #6faae8;
   --accent-strong: #9cc6f2;
@@ -336,15 +349,16 @@ button {
   );
 }
 
-/* Ink that stays readable on top of a saturated fill. Text never wears a series
- * colour; this is the inverse — text on a fill dark enough to need it. */
+/* Cell text is always the primary ink, in both modes.
+ *
+ * There is no light-on-dark variant, deliberately. Flipping the ink past a
+ * lightness threshold sounds right and is a trap: the fill has to be dark enough
+ * for white *before* it is too dark for black, and with these ramps there was no
+ * such crossover — axe-core failed 54 cells in the band between. The ramps are
+ * capped instead (see --seq-end / --div-pos), so one ink clears 4.5:1 against
+ * every step of both scales. */
 .on-fill {
   color: var(--ink);
-}
-
-.fill-seq[data-strong="true"] .on-fill,
-.fill-div[data-strong="true"] .on-fill {
-  color: var(--surface-raised);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -34,10 +34,16 @@ export default function Ch05ScaledDotProduct() {
   const scores = scaled ? head.scores : head.rawScores;
   const expansion = scaledDotTerms(head.q[row]!, head.k[col]!, divisor);
 
-  // The colour domain is pinned to the *unscaled* extreme in both states, so
-  // switching scaling on visibly desaturates the whole grid. Rescaling per state
-  // would repaint it to look identical and the toggle would appear to do nothing.
-  const domainMax = absMax(head.rawScores);
+  // The domain is the displayed matrix's own extreme, so the grid uses the whole
+  // ramp.
+  //
+  // It was pinned to the *unscaled* extreme, on the theory that switching scaling
+  // on should visibly desaturate the grid. That cost far more than it bought:
+  // scaled values are all smaller than the unscaled maximum, so every cell sat in
+  // the bottom third of the ramp and the whole grid read as pale grey in the
+  // default state. The toggle does not need help — it changes every number on
+  // screen, the working shows the division, and the legend's bounds move with it.
+  const domainMax = absMax(scores);
 
   const tokens = [...TOKENS];
 

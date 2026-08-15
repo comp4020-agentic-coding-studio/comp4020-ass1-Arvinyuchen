@@ -6,15 +6,10 @@ import type { CSSProperties } from "react";
 // `color-mix()` does the interpolation, so CLAUDE.md's rule that global.css is
 // the only file holding a colour literal survives having heatmaps.
 
-/** Threshold past which a fill is dark enough that cell text has to flip to the
- * light ink. Measured against the ramps in global.css rather than guessed. */
-const STRONG_AT = 0.62;
-
 export interface FillAttrs {
   className: string;
   style: CSSProperties;
   "data-sign"?: string;
-  "data-strong"?: string;
 }
 
 /** Sequential fill for a probability. `value` is expected in [0, 1] and the
@@ -22,11 +17,7 @@ export interface FillAttrs {
  * colour in every chapter and every grid. */
 export function sequentialFill(value: number): FillAttrs {
   const t = clamp01(value);
-  return {
-    className: "fill-seq",
-    style: { "--t": t } as CSSProperties,
-    "data-strong": String(t > STRONG_AT),
-  };
+  return { className: "fill-seq", style: { "--t": t } as CSSProperties };
 }
 
 /** Diverging fill for a signed value. `max` is the domain half-width: pass the
@@ -43,7 +34,6 @@ export function divergingFill(value: number, max: number): FillAttrs {
     className: "fill-div",
     style: { "--m": m } as CSSProperties,
     "data-sign": value < 0 ? "-1" : "1",
-    "data-strong": String(m > STRONG_AT),
   };
 }
 

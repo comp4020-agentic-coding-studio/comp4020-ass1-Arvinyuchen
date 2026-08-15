@@ -124,7 +124,6 @@ export function Matrix({
                     data-value={masked ? String(value) : value.toFixed(6)}
                     data-masked={masked ? "true" : "false"}
                     data-sign={fill["data-sign"]}
-                    data-strong={fill["data-strong"]}
                   >
                     {onCell ? (
                       <button
