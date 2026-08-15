@@ -307,7 +307,7 @@ contract — it never executes scripts. **Scope every chapter-specific selector 
 `[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
 and assertions pass for the wrong reason. That happened.
 
-`pnpm test:e2e` (Playwright, 35 tests × 3 projects: 1920×1080, 390×844, and
+`pnpm test:e2e` (Playwright, 113 tests over 3 projects: 1920×1080, 390×844, and
 reduced motion) is what actually verifies interaction, and it is the gate to run
 before shipping. It is outside CI on purpose: it needs a browser download, and a
 flake inside `check` would block the `deploy` job that depends on it.
@@ -474,15 +474,43 @@ identity, fill carries magnitude, and the two are never conflated. See the heade
 comment in `global.css`.
 
 Layout splits at **900px**. Below it the figure is `position: sticky` at the top
-and the prose runs beneath; above it, two columns with the figure sticky and
-vertically centred. **Any ancestor of a matrix needs `min-width: 0`** — a grid or
+and the prose runs beneath; above it, two columns with the figure sticky at
+`top: var(--space-6)`. **Any ancestor of a matrix needs `min-width: 0`** — a grid or
 flex item's default minimum is its content size, so without it the 6×6 score grid
 sized the figure column to 638px inside a 390px viewport and dragged the whole
 document sideways. `overflow-x` on the matrix can only work once its ancestors are
 allowed to be narrower than their contents.
 
+Three rules about the chapter grid, each of which has already been broken once:
+
+- **The chapter head sits above the grid, not inside the text column.** It is a
+  sibling of `.chapter__body`, mirroring the hero, so the prose and the figure
+  below it start on the same line. That arrangement broke before — the sticky
+  figure painted its opaque card over the thesis — but the cause was
+  `top: 50%; translate: 0 -50%`: sticky is clamped to its containing block, and a
+  transform is applied afterwards and is not. With a plain `top`, a sticky element
+  can never rise above its static position. The `no figure ever paints over prose`
+  e2e spec covers `.chapter__head` and `.chapter__thesis` explicitly now, which it
+  did not while they were nested.
+- **`.chapter__prose` needs its desktop `gap: 44vh`.** Rewriting that rule and
+  letting it inherit the base 72px puts beat tops 184px apart instead of ~590, the
+  whole chapter collapses to about one screen, and two wheel clicks rip through
+  every stage. It looks like a stage-machine bug and is not.
+- **Assert alignment on the first `.beat`, not on `.chapter__prose`.** `padding-block`
+  is inside the border box, so the container's top does not move when the padding
+  changes. A test written against the container passed while the 216px regression
+  it was meant to catch was live.
+
 The scroll-driven stage machine (`useScrollStage`) arbitrates two inputs into one
-piece of state, and both obvious approaches were wrong. Suppressing the observer
+piece of state, and every obvious approach was wrong.
+`entry.boundingClientRect` was the third: those rects are sampled when the
+intersection changed, not when the callback runs, and only changed entries are in
+the batch — so arriving at a chapter by anchor latched whichever beat happened to
+be crossing mid-jump, and no further change ever came to correct it. Chapter 2
+opened on beat 2 at 1920 and beat 1 at 1440 from identical markup. The observer is
+now only a signal that something moved; the decision measures every beat's live
+rect against a line 45% down the viewport, on each trigger plus once on mount plus
+on resize. Suppressing the observer
 for 700ms after a click raced the smooth scroll and silently reverted the reader's
 choice. Resuming on `scroll` meant a window resize — which fires one via reflow —
 threw the reader's place away, which is the marking notes' own "resizes mid-use"
