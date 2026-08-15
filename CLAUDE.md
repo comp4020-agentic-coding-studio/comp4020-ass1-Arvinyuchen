@@ -307,7 +307,7 @@ contract — it never executes scripts. **Scope every chapter-specific selector 
 `[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
 and assertions pass for the wrong reason. That happened.
 
-`pnpm test:e2e` (Playwright, 113 tests over 3 projects: 1920×1080, 390×844, and
+`pnpm test:e2e` (Playwright, 118 tests over 3 projects: 1920×1080, 390×844, and
 reduced motion) is what actually verifies interaction, and it is the gate to run
 before shipping. It is outside CI on purpose: it needs a browser download, and a
 flake inside `check` would block the `deploy` job that depends on it.
@@ -443,17 +443,30 @@ encoder/decoder columns) rather than tracing the paper's figure or copying The
 Illustrated Transformer's illustrations. That still holds and is the thing being
 marked.
 
-Separately, the hero now reproduces **the paper's actual Figure 1** beside the
-equation, as an orientation cue. Reproducing someone else's figure carries three
-obligations, all met in `Hero.astro`: a credit line linking arXiv:1706.03762; alt
-text describing the architecture rather than naming the file; and an honest
-statement of the basis, since that paper is under arXiv's *perpetual
-non-exclusive* licence --- **not** a Creative Commons grant --- so this is a
-fair-dealing reproduction for study and review, not a licensed one. The caption
-also points at chapter 10, so a reader can see which diagram is ours.
+Separately, the hero reproduces **the paper's actual Figures 1 and 2** beside the
+equation, as an orientation cue: the architecture, and the attention operation
+inside it. Reproducing someone else's figure carries three obligations, all met in
+`Hero.astro`: a credit line linking arXiv:1706.03762; alt text describing what each
+diagram shows rather than naming the file --- **per figure**, which the original
+`querySelector`-based spec test could not see, so it uses `querySelectorAll` and
+asserts all three; and an honest statement of the basis, since that paper is under
+arXiv's *perpetual non-exclusive* licence --- **not** a Creative Commons grant ---
+so this is a fair-dealing reproduction for study and review, not a licensed one.
+The caption also points at chapter 10, so a reader can see which diagram is ours.
 
-If a future week wants to drop the reproduction, drop it; do not quietly retitle
-chapter 10's diagram to cover for it.
+If a future week wants to drop the reproductions, drop them; do not quietly
+retitle chapter 10's diagram to cover for it.
+
+There are three of them for a layout reason worth knowing before touching it.
+Figure 1 is 1520 × 2239, so filling the hero's figure column with it alone makes it
+990px tall and the hero 1402px. Figure 2's two panels stack in a narrow left column
+beside it, and the 1 : 2.45 column ratio is **solved, not chosen** --- derived from
+the three aspect ratios so both columns end level, 18px apart at every desktop
+width. Swap an asset and that ratio is silently wrong, which is why an e2e test
+asserts the columns still end together. Below 900px the two panels are
+`display: none`: stacked at 256px they add ~1300px of scroll before chapter 1 on
+the viewport that carries half the mark, and chapters 5 and 7 teach both mechanisms
+interactively from the page's own numbers, which a static diagram cannot.
 
 #### Layout and design
 
@@ -480,6 +493,14 @@ flex item's default minimum is its content size, so without it the 6×6 score gr
 sized the figure column to 638px inside a 390px viewport and dragged the whole
 document sideways. `overflow-x` on the matrix can only work once its ancestors are
 allowed to be narrower than their contents.
+
+**A width defect is measured on the ink, not on the container.** `.hero` and
+`.chapter` computed to identical boxes --- same `max-width`, same padding, same left
+edge --- while the homepage visibly stopped 352px short of every chapter. First the
+hero's grid tracks fell short inside a correct container; then, once the tracks
+filled, the figure kept its own 320px cap inside a correct track. Both times a
+container-based check passed and the defect a reader sees was untouched. The e2e
+test now measures the figure the reader can see against `.chapter__viz`.
 
 Three rules about the chapter grid, each of which has already been broken once:
 

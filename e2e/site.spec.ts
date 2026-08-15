@@ -361,6 +361,62 @@ test("each chapter's first beat starts level with its figure", async ({ page }) 
   }
 });
 
+test("the hero's figure reaches the same edge the chapters' figures do", async ({ page }) => {
+  // Measured on the figures, not on `.hero` and `.chapter`. Those two containers
+  // were already identical when the homepage visibly stopped 352px short of every
+  // chapter: the hero's grid tracks were the thing falling short, and after they
+  // were widened the figure kept its own 320px cap and `justify-self: start`, so
+  // the containers matched, a container-based check passed, and the defect a
+  // reader sees was untouched. A right edge is only real where there is ink.
+  test.skip(page.viewportSize()!.width < 900, "single column below the split");
+
+  await page.goto("./");
+  const edges = await page.evaluate(() => {
+    const right = (sel: string) =>
+      Math.round(document.querySelector(sel)!.getBoundingClientRect().right);
+    // The transformer image by name, not `.hero__figure-img`: three images carry
+    // that class now and only this one sits in the right-hand column.
+    return { hero: right('[data-figure="transformer"]'), chapter: right(".chapter__viz") };
+  });
+
+  expect(
+    Math.abs(edges.hero - edges.chapter),
+    `hero figure ends at ${edges.hero}, chapter figure at ${edges.chapter}`,
+  ).toBeLessThanOrEqual(1);
+});
+
+test("the hero's two figure columns end level", async ({ page }) => {
+  // The composition is what lets the block fill its column without one 990px-tall
+  // image setting the height, and it only works while the columns stay balanced —
+  // the 1 : 2.45 ratio was solved for these three aspect ratios. Swap an asset and
+  // the ratio is silently wrong: nothing overflows, nothing fails, one column just
+  // dangles below the other.
+  test.skip(page.viewportSize()!.width < 900, "single column below the split");
+
+  await page.goto("./");
+  const gap = await page.evaluate(() => {
+    const bottom = (sel: string) =>
+      document.querySelector(sel)!.getBoundingClientRect().bottom;
+    return Math.round(Math.abs(bottom('[data-figure="transformer"]') - bottom('[data-figure="mha"]')));
+  });
+
+  expect(gap, `the figure columns end ${gap}px apart`).toBeLessThanOrEqual(40);
+});
+
+test("the phone hero shows the architecture and drops the detail figures", async ({ page }) => {
+  // A deliberate choice, recorded here so it is a contract rather than a CSS rule
+  // someone deletes as dead weight: stacking all three at 256px wide would put
+  // roughly 1300px of scroll between the title and chapter 1, on the viewport that
+  // carries half the mark. Chapters 5 and 7 teach both dropped figures
+  // interactively, which is why they are the ones that can go.
+  test.skip(page.viewportSize()!.width >= 900, "two columns above the split");
+
+  await page.goto("./");
+  await expect(page.locator('.hero__figure-img[data-figure="transformer"]')).toBeVisible();
+  await expect(page.locator('.hero__figure-img[data-figure="attention"]')).toBeHidden();
+  await expect(page.locator('.hero__figure-img[data-figure="mha"]')).toBeHidden();
+});
+
 test("the first beat is the active one when a chapter is opened directly", async ({ page }) => {
   // Arriving by anchor used to latch the wrong stage: the observer read rects off
   // its own callback entries, which are sampled when the intersection changed

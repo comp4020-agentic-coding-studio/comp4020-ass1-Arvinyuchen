@@ -39,10 +39,10 @@
      * left 352px dead at the right, so the homepage visibly stopped short of where
      * every chapter reached.
      *
-     * The figure is kept beside the text by `justify-self` on the item, not by
-     * shrinking the grid — see `.hero__figure`. An earlier attempt used `1fr` with
-     * a stretching figure and put 485px of dead space between text and image, which
-     * is what `justify-content: start` was papering over.
+     * The figure fills column 2, so the gap between text and image is the grid gap
+     * and nothing else. The 485px of dead space an earlier `1fr` attempt produced
+     * came from the figure keeping its own narrow width inside a wide column, not
+     * from `1fr` itself.
      *
      * Column 1 stays at 672px rather than copying the chapters' 32ch: the hero
      * standfirst wraps at 587px and the token row runs to ~640px, and a 362px track
@@ -75,6 +75,7 @@
   .hero .hero__title {
     max-width: none;
   }
+
 }
 
 .hero__eyebrow {
@@ -114,16 +115,33 @@
   text-align: start;
 }
 
-.hero__figure {
-  max-width: calc(var(--grid-unit) * 40);
+/* KaTeX centres the inner `.katex` block too, and that rule is the one that was
+ * actually positioning the glyphs — setting `text-align` on `.katex-display` alone
+ * left the equation sitting 200px in from the standfirst it is meant to line up
+ * with. */
+.hero__formula .katex-display > .katex {
+  text-align: start;
+}
 
-  /* The column is wide so the grid fills its container; the figure is not, so it
-   * stays next to the prose instead of drifting to the right edge. */
-  justify-self: start;
+.hero__figure {
+  /* Fills its column, so the hero's right ink edge lands where every chapter's
+   * figure does. Capping it at 320px and pinning it with `justify-self: start` was
+   * the earlier attempt: it made the grid tracks match while leaving the visible
+   * content 352px short, which is the defect a reader sees rather than the one a
+   * bounding-box measurement reports. Column 2 is what sets the size now — there
+   * is no dead space to the right of the image, so there is nothing to align
+   * against. */
 
   /* Aligns roughly with the top of the standfirst on desktop, and separates the
    * figure from the note when the columns stack. */
   margin: var(--space-6) 0 0;
+}
+
+/* One column until the hero splits; the two-column composition below is what lets
+ * the block fill its width without one tall image setting the height. */
+.hero__figure-grid {
+  display: grid;
+  gap: var(--space-3);
 }
 
 .hero__figure-img {
@@ -146,9 +164,43 @@
   text-wrap: pretty;
 }
 
+@media (width >= 900px) {
+  /* Two columns, and the ratio is solved rather than chosen: Figure 1 is 0.679 wide
+   * per unit tall, the two Figure 2 panels 0.503 and 0.651, so a left column of
+   * width w stacks to 3.524w + gap while the right column runs to 1.473 × its own
+   * width. Setting those equal across a 672px block gives 190 and 466 — near enough
+   * 1 : 2.45, written as fractions so it holds at every width rather than at 1728.
+   *
+   * This composition is the reason the figure block can fill its column at all.
+   * Figure 1 alone at 672px wide is 990px tall and made a 1402px hero; capping its
+   * height and letterboxing it with `object-fit` was the alternative, and it wasted
+   * the width it had just been given. */
+  .hero__figure-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2.45fr);
+    align-items: start;
+  }
+
+  /* Figure 1 is first in the DOM, for reading order, and beside the pair, for
+   * layout. Those are different orders, which is what explicit placement is for. */
+  .hero__figure-img[data-figure="transformer"] {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+  }
+}
+
 @media (width < 900px) {
   .hero__figure {
     max-width: calc(var(--grid-unit) * 32);
+  }
+
+  /* Figure 2's panels are supplementary here: chapters 5 and 7 teach both
+   * mechanisms interactively, from the page's own numbers, which a static diagram
+   * cannot. Stacked at 256px each they would put roughly 1300px of scroll between
+   * the title and chapter 1 on the viewport that carries half the mark, so the
+   * phone keeps the architecture and drops the detail. */
+  .hero__figure-img[data-figure="attention"],
+  .hero__figure-img[data-figure="mha"] {
+    display: none;
   }
 }
 

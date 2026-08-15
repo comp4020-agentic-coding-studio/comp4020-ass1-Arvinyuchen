@@ -378,13 +378,23 @@ describe("built assets resolve on disk", () => {
     }
   });
 
-  it("gives the paper's figure alt text and a credit", () => {
+  it("gives every reproduced figure alt text and a credit", () => {
     const doc = loadBuiltPage();
-    const img = doc.querySelector(".hero__figure-img");
-    expect(img, "the hero figure is missing").not.toBeNull();
-    expect(img!.getAttribute("alt")!.length, "alt text must describe the figure").toBeGreaterThan(
-      80,
-    );
+
+    // All of them, not `querySelector`'s first. The hero reproduces three figures
+    // now, and the single-element version of this test would have passed while two
+    // of them shipped undescribed — the obligation is per figure, not per page.
+    const images = [...doc.querySelectorAll(".hero__figure-img")];
+    expect(images.length, "the hero should reproduce three figures").toBe(3);
+
+    for (const img of images) {
+      const name = img.getAttribute("data-figure");
+      expect(name, "each figure needs a data-figure name").toBeTruthy();
+      expect(
+        img.getAttribute("alt")?.length ?? 0,
+        `alt text for ${name} must describe the figure`,
+      ).toBeGreaterThan(80);
+    }
 
     const caption = doc.querySelector(".hero__figure-caption");
     expect(caption, "a reproduced figure needs a credit").not.toBeNull();

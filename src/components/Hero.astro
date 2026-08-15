@@ -1,6 +1,8 @@
 ---
 import { SEQ_LEN, TOKENS } from "../lib/transformer/constants";
 import figure1 from "../assets/images/transformer.png";
+import figure2a from "../assets/images/attention.png";
+import figure2b from "../assets/images/mha.png";
 import { ATTENTION_TEX } from "../lib/transformer/notation";
 import { tex } from "../lib/viz/tex";
 
@@ -10,19 +12,28 @@ import { tex } from "../lib/viz/tex";
 // KaTeX emits both HTML and MathML, so the accessible reading is the MathML rather
 // than a hand-written `sr-only` gloss that could drift from the formula beside it.
 //
-// The paper's own Figure 1 sits beside the equation as an orientation cue: the
-// equation is the mechanism, the diagram is where it lives. It is reproduced with
-// credit — arXiv:1706.03762 is under arXiv's perpetual non-exclusive licence,
-// which is not a Creative Commons grant, so this is a fair-dealing reproduction
-// for study and review rather than a licensed one. Chapter 10's architecture
-// diagram remains original work and is not traced from this; see CLAUDE.md.
+// The paper's own figures sit beside the equation as an orientation cue: the
+// equation is the mechanism, the diagrams are where it lives. Figure 1 is the
+// architecture; Figure 2's two panels are the operation the equation writes and
+// the multi-head wrapper around it. They are reproduced with credit —
+// arXiv:1706.03762 is under arXiv's perpetual non-exclusive licence, which is not
+// a Creative Commons grant, so this is a fair-dealing reproduction for study and
+// review rather than a licensed one. Chapter 10's architecture diagram remains
+// original work and is not traced from these; see CLAUDE.md.
+//
+// Three of them rather than one because of geometry, not appetite. Figure 1 is
+// 1520 × 2239, so filling the hero's figure column with it alone makes it 990px
+// tall; the two narrow panels stacked beside it fill the same width at a height
+// the composition chooses. Figure 1 is first in the DOM and placed into column 2
+// by CSS, so a screen reader leads with the architecture rather than with a
+// detail of it.
 //
 // A plain `<img>` on the imported asset rather than Astro's `<Image>`: the
 // optimising component needs `sharp`, and adding a native binary two days from a
 // deadline risks the CI install, which runs `--frozen-lockfile` on Linux under a
-// pnpm config that only allows builds for esbuild. So the original PNG ships as-is
-// at 159KB. Width and height come from the import metadata so the space is
-// reserved before it loads and nothing shifts.
+// pnpm config that only allows builds for esbuild. So the original PNGs ship
+// as-is. Width and height come from the import metadata so the space is reserved
+// before they load and nothing shifts.
 ---
 
 <header class="hero">
@@ -58,19 +69,43 @@ import { tex } from "../lib/viz/tex";
   </div>
 
   <figure class="hero__figure">
-    <img
-      src={figure1.src}
-      width={figure1.width}
-      height={figure1.height}
-      alt="Figure 1 of the paper: two stacked columns. On the left the encoder — input embedding, plus positional encoding, then multi-head attention and a feed-forward network, each followed by Add and Norm, repeated N times. On the right the decoder — the same shape but with masked multi-head attention first, then a second attention block taking its keys and values from the encoder, ending in a linear layer and a softmax to output probabilities."
-      decoding="async"
-      class="hero__figure-img"
-    />
+    <div class="hero__figure-grid">
+      <img
+        src={figure1.src}
+        width={figure1.width}
+        height={figure1.height}
+        alt="Figure 1 of the paper: two stacked columns. On the left the encoder — input embedding, plus positional encoding, then multi-head attention and a feed-forward network, each followed by Add and Norm, repeated N times. On the right the decoder — the same shape but with masked multi-head attention first, then a second attention block taking its keys and values from the encoder, ending in a linear layer and a softmax to output probabilities."
+        decoding="async"
+        class="hero__figure-img"
+        data-figure="transformer"
+      />
+
+      <img
+        src={figure2a.src}
+        width={figure2a.width}
+        height={figure2a.height}
+        alt="Figure 2, left panel: scaled dot-product attention as a flow chart. Q and K enter a matrix multiplication, whose result is scaled, optionally masked, and passed through a softmax; that output is multiplied with V to produce the result."
+        decoding="async"
+        class="hero__figure-img"
+        data-figure="attention"
+      />
+
+      <img
+        src={figure2b.src}
+        width={figure2b.width}
+        height={figure2b.height}
+        alt="Figure 2, right panel: multi-head attention. V, K and Q each pass through their own linear projection, h sets of them in parallel; each set feeds a scaled dot-product attention block, and the h results are concatenated and put through one final linear layer."
+        decoding="async"
+        class="hero__figure-img"
+        data-figure="mha"
+      />
+    </div>
+
     <figcaption class="hero__figure-caption">
-      Figure&nbsp;1 from <a href="https://arxiv.org/abs/1706.03762">Vaswani et al.,
-      “Attention Is All You Need” (arXiv:1706.03762)</a>, reproduced for study and
-      review. Chapter&nbsp;10 redraws this architecture from the page's own
-      constants.
+      Figures&nbsp;1 and 2 from <a href="https://arxiv.org/abs/1706.03762">Vaswani et
+      al., “Attention Is All You Need” (arXiv:1706.03762)</a>, reproduced for study
+      and review: the architecture, and the attention operation inside it.
+      Chapter&nbsp;10 redraws that architecture from the page's own constants.
     </figcaption>
   </figure>
 </header>
