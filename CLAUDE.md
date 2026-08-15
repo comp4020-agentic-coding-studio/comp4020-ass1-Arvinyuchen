@@ -154,12 +154,25 @@ Three build options exist for the same reason, and all are load-bearing:
 **This limit is no longer sufficient on its own.** A `client:*` island is emitted
 as a separate module chunk plus a renderer entrypoint however high the limit goes
 --- inlining cannot apply to a graph that imports across chunks. So
-`linkinator.config.json` exempts the base-prefixed `_astro/` URLs, which
-linkinator auto-discovers, and which `comp4020-crit2-Arvinyuchen` already
-precedents against a byte-identical workflow step. That file also turns
-`checkFragments` on, so the eleven chapter anchors are genuinely validated, and
-skips external links --- linkinator was previously following the page's arxiv and
-github URLs, so an upstream 404 could fail a perfectly good build.
+`linkinator.config.json` skips `_astro/`, which linkinator auto-discovers, and
+which `comp4020-crit2-Arvinyuchen` already precedents against a byte-identical
+workflow step. That file also turns `checkFragments` on, so the eleven chapter
+anchors are genuinely validated, and skips external links --- linkinator was
+previously following the page's arxiv and github URLs, so an upstream 404 could
+fail a perfectly good build.
+
+Two things about that skip, both learned by getting it wrong:
+
+- **Anchor the pattern to nothing.** It was first written
+  `^/comp4020-ass1-Arvinyuchen/_astro/`, which never matched, because linkinator
+  reports these as `dist/comp4020-.../_astro/...`. It looked like it worked for
+  weeks: **linkinator does not check `<script src>` at all**, so the island chunks
+  were never being tested. The first `<img>` with a base-prefixed src failed the
+  step immediately.
+- **The skip hides a real failure, so cover it elsewhere.** A missing `_astro/`
+  asset now passes the links check. `spec/assignment-1.test.ts` asserts every
+  base-prefixed asset URL in the built page resolves to a file in `dist/`. Verify
+  by moving one aside and watching it fail.
 
 If you find yourself fighting any of these, the fix is upstream of the config.
 
@@ -379,6 +392,39 @@ Two things that will waste an hour if you don't know them:
 And a rule earned the hard way: **confirm a check can fail before trusting it.**
 `linkinator` prints "scanned 1 links" with 25 anchors on the page and looks inert;
 it was verified by pointing an anchor at a missing id and watching it exit 1.
+
+#### Notation, and whose diagram is whose
+
+**Square roots are MathML `<msqrt>`, never a bare U+221A.** U+221A is the hook
+alone: no bar, no stretching. `√dₖ` written that way renders as a tick mark beside
+a letter, which is what shipped in the hero until someone looked at it. `text-decoration:
+overline` is the next wrong answer --- decoration is drawn per inline box, so the
+radicand and its subscript each get a stub with a gap, and neither joins the hook.
+JSX types for the MathML elements live in `src/types/mathml.d.ts`, because React
+ships HTML and SVG types but not MathML.
+
+More generally: **prose in `chapters.ts` is plain text with no markdown step**, so
+notation has to be written as the characters it should render as (`dₖ`, not `d_k`),
+and a spec test asserts no rendered prose contains a backtick or a `d_k`.
+
+**The originality rule, amended rather than worked around.** Chapter 10's
+architecture diagram is original: own palette, proportions and typography,
+redrawing Figure 1's diagrammatic grammar (boxed sublayers, stacked ×N repetition,
+encoder/decoder columns) rather than tracing the paper's figure or copying The
+Illustrated Transformer's illustrations. That still holds and is the thing being
+marked.
+
+Separately, the hero now reproduces **the paper's actual Figure 1** beside the
+equation, as an orientation cue. Reproducing someone else's figure carries three
+obligations, all met in `Hero.astro`: a credit line linking arXiv:1706.03762; alt
+text describing the architecture rather than naming the file; and an honest
+statement of the basis, since that paper is under arXiv's *perpetual
+non-exclusive* licence --- **not** a Creative Commons grant --- so this is a
+fair-dealing reproduction for study and review, not a licensed one. The caption
+also points at chapter 10, so a reader can see which diagram is ours.
+
+If a future week wants to drop the reproduction, drop it; do not quietly retitle
+chapter 10's diagram to cover for it.
 
 #### Layout and design
 
