@@ -1,55 +1,208 @@
 /*
  * Design tokens for the whole site. Components consume these names and never
  * re-declare a colour, size, or duration literal of their own.
+ *
+ * Direction: engineering vellum. A pale blue-grey plotting-paper ground with an
+ * 8px grid that is load-bearing rather than decorative — matrix cells, token
+ * boxes and axis ticks all snap to `--grid-unit`, so the grid is visibly the
+ * thing the layout is built on.
+ *
+ * The colour system has exactly two channels and never conflates them:
+ *
+ *   hue   = identity   which tensor is this? (query / key / value / position)
+ *                      carried by labels, frames and connector lines
+ *   value = magnitude  what is this number? carried by cell fill, via the
+ *                      diverging ramp for signed values and the sequential ramp
+ *                      for probabilities in [0, 1]
+ *
+ * The four identity hues were chosen with the data-viz skill's validator, not by
+ * eye, against the two surfaces below and with `--pairs all` (chapter 4 puts all
+ * four in one frame). Both modes pass the lightness band, the chroma floor,
+ * all-pairs CVD separation (worst deuteranopia dE 9.8), the normal-vision floor
+ * (worst 16.5) and contrast — with one exception: `--role-position` on the dark
+ * surface measures 2.88:1, which the skill treats as a non-dismissable warning.
+ * The relief is designed in rather than waived: position marks always carry a
+ * visible text label, and every visualisation ships a table view.
+ *
+ * Rejected candidates, for the record: a rose/teal query-key pair collapsed
+ * under deuteranopia (dE 7.3), and that teal fell below the chroma floor at 0.09
+ * so it read as grey.
  */
+
+@font-face {
+  font-family: instrument-sans;
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+
+  /* Variable font, latin subset. Referenced from src/ rather than public/ so
+   * Vite emits the base-prefixed _astro/ URL itself — hardcoding
+   * /comp4020-ass1-Arvinyuchen/ here would be one more place the repo name has
+   * to be corrected each week. */
+  src: url("../assets/fonts/instrument-sans-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: geist-mono;
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("../assets/fonts/geist-mono-latin.woff2") format("woff2");
+}
+
 :root {
-  /* type */
-  --font-prose: charter, "Bitstream Charter", "Iowan Old Style", "Source Serif 4", georgia, serif;
-  --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+  color-scheme: light;
+
+  /* type: three roles, each justified by the subject.
+   * - ui    a narrow grotesque for prose and controls
+   * - mono  every number on the page, tabular so columns align
+   * - math  equations only. The paper is LaTeX, so formulas get a serif with
+   *         Computer Modern's texture; Times is the honest fallback, since it is
+   *         what Computer Modern was cut to sit beside. */
+  --font-ui: instrument-sans, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: geist-mono, ui-monospace, sfmono-regular, "SF Mono", menlo, monospace;
+  --font-math: "Latin Modern Roman", "Computer Modern Serif", cmr10, "Times New Roman", times, serif;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-base: 1.1875rem;
-  --text-md: 1.375rem;
-  --text-lg: 1.75rem;
-  --text-xl: clamp(2.25rem, 1.6rem + 2.2vw, 3rem);
-  --leading-prose: 1.7;
-  --leading-tight: 1.25;
-  --measure: 62ch;
+  --text-base: 1.0625rem;
+  --text-md: 1.3125rem;
+  --text-lg: 1.625rem;
+  --text-xl: clamp(2.25rem, 1.5rem + 2.6vw, 3.5rem);
+  --text-display: clamp(2.75rem, 1.4rem + 5vw, 5.5rem);
+  --leading-prose: 1.65;
+  --leading-tight: 1.15;
+  --measure: 60ch;
 
-  /* colour: warm paper, one accent */
-  --surface: #fdfdfc;
-  --surface-figure: #f6f5f2;
+  /* the grid. Every spacing step below is a multiple of this. */
+  --grid-unit: 8px;
+
+  /* surfaces and ink */
+  --surface: #eef2f6;
+  --surface-figure: #f7f9fb;
   --surface-raised: #fff;
-  --ink: #1c1b19;
-  --ink-2: #55534e;
-  --ink-3: #86837c;
-  --rule: #e3e0da;
-  --rule-strong: #c9c5bc;
-  --accent-rgb: 44 74 124;
-  --accent: rgb(var(--accent-rgb));
-  --accent-strong: #1f3557;
-  --accent-tint: #eef1f6;
+  --surface-sunken: #e3e9ef;
+  --ink: #12181f;
+  --ink-2: #46525e;
+  --ink-3: #75828f;
+  --rule: #d3dce4;
+  --rule-strong: #b3c0cc;
+  --grid-line: #dde5ec;
+
+  /* identity hues — validated, see the header comment */
+  --role-query: #6a3ec7;
+  --role-key: #0f9b6c;
+  --role-value: #d2621f;
+  --role-position: #a8317a;
+
+  /* magnitude: sequential, for probabilities on a fixed 0 to 1 domain.
+   * One hue, light to dark. Components set --t in [0,1] and the ramp is mixed
+   * against the figure surface, so "near zero" recedes into the paper. */
+  --seq-end: #184f95;
+  --seq-floor: #cde2fb;
+
+  /* magnitude: diverging, for signed values. Two poles and a neutral grey
+   * midpoint, so zero reads as "nothing" rather than as a colour. Positive is
+   * the same blue family as the sequential ramp — a high score and a high weight
+   * therefore darken in the same direction across chapters, which is worth more
+   * than matching the convention that warm means large. The legend says which
+   * is which. */
+  --div-pos: #1c5cab;
+  --div-neg: #b8342f;
+  --div-mid: #eceff2;
+
+  /* link colour, deliberately distinct from all four identity hues so a link
+   * never reads as a tensor label */
+  --accent: #0f5fa8;
+  --accent-strong: #0b4479;
   --on-accent: #fff;
 
-  /* space */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
-  --space-8: 4.5rem;
+  /* Only the outgoing four-stage page reads these two. They go with it, in the
+   * commit that replaces it — kept for one commit so the design layer can land
+   * without shipping a page whose accent colour silently fails to resolve. */
+  --accent-rgb: 15 95 168;
+  --accent-tint: #e4eef8;
 
-  /* shape + motion */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
-  --shadow-figure: 0 1px 2px rgb(0 0 0 / 4%), 0 10px 30px -14px rgb(0 0 0 / 14%);
-  --dur-fast: 140ms;
-  --dur: 240ms;
+  /* space: multiples of --grid-unit */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 72px;
+  --space-8: 112px;
+
+  /* shape and motion */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --shadow-figure: 0 1px 2px rgb(18 24 31 / 5%), 0 12px 32px -16px rgb(18 24 31 / 18%);
+  --dur-fast: 120ms;
+  --dur: 260ms;
+  --dur-slow: 520ms;
   --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+/*
+ * Dark mode is a selected set of steps against the dark surface, not an
+ * automatic inversion. Declared under both scopes per the data-viz skill: the
+ * media query covers the OS setting, the attribute covers an explicit choice,
+ * and the :not() guard lets an explicit light selection beat OS dark.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+
+    --surface: #0d1117;
+    --surface-figure: #12181f;
+    --surface-raised: #1a222c;
+    --surface-sunken: #080b0f;
+    --ink: #f2f5f8;
+    --ink-2: #b6c2ce;
+    --ink-3: #8494a2;
+    --rule: #2a333d;
+    --rule-strong: #3d4954;
+    --grid-line: #1e262f;
+    --role-query: #7d5ad2;
+    --role-key: #0f9b6c;
+    --role-value: #d2621f;
+    --role-position: #a8317a;
+    --seq-end: #86b6ef;
+    --seq-floor: #10305c;
+    --div-pos: #5598e7;
+    --div-neg: #e06a63;
+    --div-mid: #232b34;
+    --accent: #6faae8;
+    --accent-strong: #9cc6f2;
+    --on-accent: #0d1117;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface: #0d1117;
+  --surface-figure: #12181f;
+  --surface-raised: #1a222c;
+  --surface-sunken: #080b0f;
+  --ink: #f2f5f8;
+  --ink-2: #b6c2ce;
+  --ink-3: #8494a2;
+  --rule: #2a333d;
+  --rule-strong: #3d4954;
+  --grid-line: #1e262f;
+  --role-query: #7d5ad2;
+  --role-key: #0f9b6c;
+  --role-value: #d2621f;
+  --role-position: #a8317a;
+  --seq-end: #86b6ef;
+  --seq-floor: #10305c;
+  --div-pos: #5598e7;
+  --div-neg: #e06a63;
+  --div-mid: #232b34;
+  --accent: #6faae8;
+  --accent-strong: #9cc6f2;
+  --on-accent: #0d1117;
 }
 
 *,
@@ -60,10 +213,17 @@
 
 body {
   margin: 0;
-  padding: var(--space-6) var(--space-5) var(--space-8);
-  background: var(--surface);
+  background-color: var(--surface);
+
+  /* The vellum grid. Two hairline gradients on --grid-unit, so the page's
+   * structure is visible at the same rhythm the components snap to. */
+  background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-unit) var(--grid-unit);
   color: var(--ink);
-  font: var(--text-base) / var(--leading-prose) var(--font-prose);
+  font: var(--text-base) / var(--leading-prose) var(--font-ui);
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
@@ -71,24 +231,24 @@ h2,
 h3 {
   margin: 0;
   font-family: var(--font-ui);
+  font-weight: 600;
   line-height: var(--leading-tight);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
 h1 {
-  font-size: var(--text-xl);
+  font-size: var(--text-display);
   font-weight: 700;
+  letter-spacing: -0.035em;
 }
 
 h2 {
   font-size: var(--text-lg);
-  font-weight: 650;
 }
 
 h3 {
   font-size: var(--text-md);
-  font-weight: 600;
 }
 
 p {
@@ -97,7 +257,7 @@ p {
 
 a {
   color: var(--accent);
-  text-decoration-color: rgb(var(--accent-rgb) / 35%);
+  text-decoration-color: color-mix(in oklab, var(--accent) 35%, transparent);
   text-underline-offset: 0.15em;
   transition: text-decoration-color var(--dur-fast) var(--ease);
 }
@@ -108,19 +268,28 @@ a:hover {
 
 button {
   font: inherit;
+  color: inherit;
 }
 
 :focus-visible {
+  border-radius: var(--radius-sm);
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
 
 /* Numeric output: mono so vector components line up down a column. */
 .num {
   font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
   font-size: 0.9em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
+}
+
+/* Equations. The only place --font-math appears. */
+.math {
+  font-family: var(--font-math);
+  font-style: italic;
+  letter-spacing: 0.01em;
 }
 
 .sr-only {
@@ -130,6 +299,49 @@ button {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/*
+ * Magnitude fills. A component sets the numeric custom property and gets the
+ * colour, so no component ever names a colour.
+ *
+ *   .fill-seq  set --t in [0,1]           probabilities
+ *   .fill-div  set --m in [0,1] and       signed values; --m is |value| / max
+ *              --sign to 1 or -1
+ */
+.fill-seq {
+  background-color: color-mix(
+    in oklab,
+    var(--seq-end) calc(var(--t, 0) * 100%),
+    var(--seq-floor)
+  );
+}
+
+.fill-div {
+  background-color: color-mix(
+    in oklab,
+    var(--div-pos) calc(var(--m, 0) * 100%),
+    var(--div-mid)
+  );
+}
+
+.fill-div[data-sign="-1"] {
+  background-color: color-mix(
+    in oklab,
+    var(--div-neg) calc(var(--m, 0) * 100%),
+    var(--div-mid)
+  );
+}
+
+/* Ink that stays readable on top of a saturated fill. Text never wears a series
+ * colour; this is the inverse — text on a fill dark enough to need it. */
+.on-fill {
+  color: var(--ink);
+}
+
+.fill-seq[data-strong="true"] .on-fill,
+.fill-div[data-strong="true"] .on-fill {
+  color: var(--surface-raised);
 }
 
 @media (prefers-reduced-motion: reduce) {
