@@ -28,69 +28,66 @@ import figure1 from "../assets/images/transformer.png";
 
   <h1 class="hero__title">Attention Is All You Need</h1>
 
-  <p class="hero__standfirst">
-    The paper that replaced recurrence with a single operation: score every pair
-    of words, turn the scores into weights, and mix. Everything below is that
-    operation, run on one six-word sentence with numbers small enough to check by
-    hand.
-  </p>
+  <div class="hero__body">
+    <p class="hero__standfirst">
+      The paper that replaced recurrence with a single operation: score every pair
+      of words, turn the scores into weights, and mix. Everything below is that
+      operation, run on one six-word sentence with numbers small enough to check by
+      hand.
+    </p>
 
-  <div class="hero__pair">
-    <div>
-      <div class="hero__formula formula" aria-hidden="true">
-        <span class="formula__fn math">softmax</span>
-        <span class="formula__paren math">(</span>
-        <span class="formula__fraction">
-          <span class="formula__numerator">
-            <span class="math formula__glyph">QK<sup>T</sup></span>
-          </span>
-          <span class="formula__denominator math">
-            <math class="sqrt" display="inline">
-              <msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt>
-            </math>
-          </span>
+    <div class="hero__formula formula" aria-hidden="true">
+      <span class="formula__fn math">softmax</span>
+      <span class="formula__paren math">(</span>
+      <span class="formula__fraction">
+        <span class="formula__numerator">
+          <span class="math formula__glyph">QK<sup>T</sup></span>
         </span>
-        <span class="formula__paren math">)</span>
-        <span class="formula__v math">V</span>
-      </div>
-      <p class="sr-only">
-        The equation: softmax of Q times K transpose, divided by the square root
-        of d sub k, times V.
-      </p>
-      <p class="hero__caption">The mechanism, in one line.</p>
+        <span class="formula__denominator math">
+          <math class="sqrt" display="inline">
+            <msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt>
+          </math>
+        </span>
+      </span>
+      <span class="formula__paren math">)</span>
+      <span class="formula__v math">V</span>
     </div>
+    <p class="sr-only">
+      The equation: softmax of Q times K transpose, divided by the square root of
+      d sub k, times V.
+    </p>
 
-    <figure class="hero__figure">
-      <img
-        src={figure1.src}
-        width={figure1.width}
-        height={figure1.height}
-        alt="Figure 1 of the paper: two stacked columns. On the left the encoder — input embedding, plus positional encoding, then multi-head attention and a feed-forward network, each followed by Add and Norm, repeated N times. On the right the decoder — the same shape but with masked multi-head attention first, then a second attention block taking its keys and values from the encoder, ending in a linear layer and a softmax to output probabilities."
-        decoding="async"
-        class="hero__figure-img"
-      />
-      <figcaption class="hero__figure-caption">
-        Figure&nbsp;1 from <a href="https://arxiv.org/abs/1706.03762">Vaswani et al.,
-        “Attention Is All You Need” (arXiv:1706.03762)</a>, reproduced for study and
-        review. Chapter&nbsp;10 redraws this architecture from the page's own
-        constants.
-      </figcaption>
-    </figure>
+    <ol class="hero__sentence" aria-label={`The worked example, ${SEQ_LEN} tokens`}>
+      {
+        TOKENS.map((token, i) => (
+          <li class="token" data-token={token} data-position={i}>
+            <span class="token__word">{token}</span>
+            <span class="token__index num">{i}</span>
+          </li>
+        ))
+      }
+    </ol>
+
+    <p class="hero__note">
+      Two of those six tokens are the same word. Chapter&nbsp;3 is about why that is
+      a problem, and what the paper does about it.
+    </p>
   </div>
 
-  <ol class="hero__sentence" aria-label={`The worked example, ${SEQ_LEN} tokens`}>
-    {
-      TOKENS.map((token, i) => (
-        <li class="token" data-token={token} data-position={i}>
-          <span class="token__word">{token}</span>
-          <span class="token__index num">{i}</span>
-        </li>
-      ))
-    }
-  </ol>
-
-  <p class="hero__note">
-    Two of those six tokens are the same word. Chapter&nbsp;3 is about why that is
-    a problem, and what the paper does about it.
-  </p>
+  <figure class="hero__figure">
+    <img
+      src={figure1.src}
+      width={figure1.width}
+      height={figure1.height}
+      alt="Figure 1 of the paper: two stacked columns. On the left the encoder — input embedding, plus positional encoding, then multi-head attention and a feed-forward network, each followed by Add and Norm, repeated N times. On the right the decoder — the same shape but with masked multi-head attention first, then a second attention block taking its keys and values from the encoder, ending in a linear layer and a softmax to output probabilities."
+      decoding="async"
+      class="hero__figure-img"
+    />
+    <figcaption class="hero__figure-caption">
+      Figure&nbsp;1 from <a href="https://arxiv.org/abs/1706.03762">Vaswani et al.,
+      “Attention Is All You Need” (arXiv:1706.03762)</a>, reproduced for study and
+      review. Chapter&nbsp;10 redraws this architecture from the page's own
+      constants.
+    </figcaption>
+  </figure>
 </header>

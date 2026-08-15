@@ -13,11 +13,56 @@
 
 /* ---------------------------------------------------------------- hero */
 
+/* The hero is the original column of content plus the paper's figure as an aside
+ * beside it. The figure was first dropped in next to the equation alone, which
+ * wedged it into the middle of the vertical flow and left a dead gap under the
+ * equation — the grouping has to be all-of-the-hero against the figure, not one
+ * element of it. */
 .hero {
-  max-width: calc(var(--grid-unit) * 130);
+  display: grid;
+  max-width: calc(var(--grid-unit) * 180);
   margin-inline: auto;
   padding-block: var(--space-8) var(--space-7);
   padding-inline: var(--space-4);
+  gap: var(--space-6);
+}
+
+.hero__body {
+  min-width: 0;
+}
+
+@media (width >= 900px) {
+  .hero {
+    /* `auto` on the figure so the text column keeps its own measure and the
+     * figure takes only what it needs, rather than the two splitting the width
+     * and squeezing the display title. */
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+
+    /* Columns are gapped; rows are not, because the vertical rhythm already comes
+     * from each element's own margin and a row gap would double it. */
+    gap: 0 var(--space-7);
+  }
+
+  /* The eyebrow and the title own their whole line — the figure begins beside the
+   * standfirst, not beside the headline. Auto-placement then puts `.hero__body` in
+   * column 1 and the figure in column 2 of the row below without either needing an
+   * explicit position. */
+  .hero__eyebrow,
+  .hero__title {
+    grid-column: 1 / -1;
+  }
+
+  .hero__body {
+    grid-column: 1;
+  }
+
+  /* No measure cap once the title has the full width to itself: the hero's own
+   * max-width is the constraint, and 22ch would break "Attention Is All You Need"
+   * across two lines for no reason. */
+  .hero .hero__title {
+    max-width: none;
+  }
 }
 
 .hero__eyebrow {
@@ -41,32 +86,24 @@
   text-wrap: pretty;
 }
 
-/* The equation and the paper's own figure sit side by side: the equation is the
- * mechanism, the diagram is where it lives. Stacked below the split, where two
- * columns would leave neither one legible. */
-.hero__pair {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  margin-block-start: var(--space-6);
-  gap: var(--space-6);
-}
-
-.hero__formula {
+/* Scoped through `.hero` deliberately. `.formula` sets `justify-content: center`
+ * and is declared later in this file, so at equal specificity it won it — the
+ * equation floated in the middle of a 1000px column while everything around it was
+ * flush left. This is the selector-ordering trap CLAUDE.md warns about, and the
+ * fix is specificity rather than reordering, so moving a block later cannot
+ * silently undo it again. */
+.hero .hero__formula {
   justify-content: flex-start;
+  margin-block-start: var(--space-6);
   font-size: var(--text-xl);
-}
-
-.hero__caption {
-  max-width: var(--measure-lead);
-  margin-block-start: var(--space-3);
-  color: var(--ink-3);
-  font-size: var(--text-sm);
 }
 
 .hero__figure {
   max-width: calc(var(--grid-unit) * 40);
-  margin: 0;
+
+  /* Aligns roughly with the top of the standfirst on desktop, and separates the
+   * figure from the note when the columns stack. */
+  margin: var(--space-6) 0 0;
 }
 
 .hero__figure-img {
