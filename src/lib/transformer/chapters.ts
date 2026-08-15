@@ -45,7 +45,7 @@ export const CHAPTERS: readonly Chapter[] = [
     slug: "token-embeddings",
     title: "Words become vectors",
     thesis:
-      "Every token is looked up in a table. Identical tokens get identical vectors — which is a problem, because our sentence contains the word `the` twice.",
+      "Every token is looked up in a table. Identical tokens get identical vectors — which is a problem, because our sentence contains the word “the” twice.",
     status: "planned",
     beats: [],
   },
@@ -53,7 +53,7 @@ export const CHAPTERS: readonly Chapter[] = [
     id: "03",
     number: 3,
     slug: "positional-encoding",
-    title: "Telling the two `the`s apart",
+    title: "Telling the two “the”s apart",
     thesis:
       "Adding a fixed pattern of sines and cosines to each embedding gives every position a different vector, without the model having to learn what order means.",
     status: "planned",
@@ -75,7 +75,7 @@ export const CHAPTERS: readonly Chapter[] = [
     slug: "scaled-dot-product",
     title: "Scoring every pair",
     thesis:
-      "One dot product per pair of tokens gives a 6 × 6 grid of raw compatibilities. Dividing by √d_k keeps those numbers in a range where softmax still has a gradient.",
+      "One dot product per pair of tokens gives a 6 × 6 grid of raw compatibilities. Dividing by √dₖ keeps those numbers in a range where softmax still has a gradient.",
     status: "ready",
     beats: [
       {
@@ -96,7 +96,7 @@ export const CHAPTERS: readonly Chapter[] = [
       },
       {
         id: "scaling",
-        body: "Now divide every cell by √d_k. Here d_k is 2, so that is √2 ≈ 1.4142, and every number shrinks by the same factor. Switch it off and watch what happens to the spread: large dot products push softmax toward putting almost all its weight on one token, where the gradient nearly vanishes. The division is the paper's fix, and it is the only reason the word `scaled` is in the name.",
+        body: "Now divide every cell by √dₖ. Here dₖ is 2, so that is √2 ≈ 1.4142, and every number shrinks by the same factor. Switch it off and watch what happens to the spread: large dot products push softmax toward putting almost all its weight on one token, where the gradient nearly vanishes. The division is the paper's fix, and it is the only reason the word “scaled” is in the name.",
       },
     ],
   },

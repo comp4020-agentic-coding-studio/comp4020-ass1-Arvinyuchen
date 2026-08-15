@@ -12,7 +12,14 @@ const PHONE = { width: 390, height: 844 };
 // the only way to exercise the deployed asset URLs locally — opening
 // `dist/index.html` off the filesystem would 404 every island chunk for the same
 // reason linkinator does.
-const BASE_URL = "http://localhost:4321/comp4020-ass1-Arvinyuchen/";
+//
+// The port is pinned and passed to the server explicitly rather than left at
+// Astro's default. Astro walks upward from 4321 when the port is busy, and on
+// this machine an unrelated local server holds it — so the default silently
+// serves on 4322 or 4323 and every spec fails to connect to a URL that was only
+// ever a guess.
+const PORT = 4329;
+const BASE_URL = `http://localhost:${PORT}/comp4020-ass1-Arvinyuchen/`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -51,7 +58,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "pnpm preview",
+    command: `pnpm preview --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

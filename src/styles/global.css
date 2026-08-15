@@ -73,6 +73,12 @@
   --leading-tight: 1.15;
   --measure: 60ch;
 
+  /* `ch` scales with the element's own font size, so a single measure set at
+   * body size comes out far too long once applied to a standfirst two steps up
+   * the scale — 60ch at --text-md measured 816px, about 78 characters. Larger
+   * lead-in text gets its own, tighter measure. */
+  --measure-lead: 42ch;
+
   /* the grid. Every spacing step below is a multiple of this. */
   --grid-unit: 8px;
 
