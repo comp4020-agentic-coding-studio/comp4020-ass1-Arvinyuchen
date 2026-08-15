@@ -1,21 +1,23 @@
-# Assignment 1 reflection
+# Assignment 1 — reflection
 
-**The breakthrough that moved the work forward** was deciding, before any component existed,
-on the exact `data-*` vocabulary the interaction would use — `data-stage`, `data-stage-panel`,
-`data-diagram-block`, `data-token`, `data-head` — and writing it into both `CLAUDE.md` and a
-red spec test in the same sitting. Once that contract existed, the rest of the build stopped
-being "build something interactive" and became "make these 27 assertions true", which is a
-much smaller and more checkable problem. It also exposed a real limit early rather than late:
-JSDOM parses the built HTML but never runs the `<script>` tag, so the spec test could only ever
-prove the markup was wired correctly, not that a click actually did anything. Knowing that
-going in meant manual Chrome verification wasn't an afterthought bolted on at the end — it was
-budgeted for from the start, and it's where I actually found the real bugs (a whitespace
-character silently eaten by Astro's HTML compiler, a window manager that wouldn't give Chrome
-a true 1920px viewport). Every one of those was invisible to `pnpm check` and only showed up
-because I made myself look at the rendered page instead of trusting green output.
+**The breakthrough that moved the work forward** was reading my own CLAUDE.md
+back and treating a sentence in it as a bug report. It said, honestly, that JSDOM
+never executes scripts, so the spec could only check markup and real interaction
+was "verified by hand in Chrome at both marking viewports". I had written that as
+a caveat. This week I read it as a missing sensor and went and built it. Getting
+Playwright running took a detour — `astro preview` daemonises when it has no TTY,
+so Playwright insisted the server had exited while it was serving happily — but
+within minutes of the first green run it had found three defects I could not have
+found by looking: a stepper that silently undid its own clicks because a timer was
+racing a smooth scroll, a chapter that threw away the reader's place whenever the
+window was resized, and a table that dragged the whole page sideways on a phone.
+The middle one is precisely the "resizes mid-use" case the marking notes describe.
+I had used that page by hand a dozen times and never once resized it.
 
-**What this changed about the developer I want to be** is a sharper distrust of "the tests
-pass" as a stopping point. A green suite told me the contract was met; it never told me the
-page was actually good to look at, or that a number on screen was honest rather than invented.
-The habit I want to keep is the one from this week: treat automated checks as a floor, and
-still open the browser.
+**What this changed about the developer I want to be** is that I now reach for the
+instrument before the inspection, and I distrust green. Two of this week's worst
+moments were things that passed: a spec whose selectors were unscoped, so once
+there were eleven chapters its assertions matched 46 elements and succeeded for
+entirely the wrong reason, and a links check that printed reassuring output while
+validating almost nothing until I broke an anchor to see whether it would notice.
+Confirming a check can fail is now part of writing it.
