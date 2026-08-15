@@ -280,9 +280,19 @@
     grid-column: 2;
 
     /* Centred in the viewport rather than pinned to the top, so the figure and
-     * the beat that describes it are in the eye's path at the same time. */
-    top: 50%;
-    translate: 0 -50%;
+     * the beat describing it are in the eye's path together.
+     *
+     * Centred by being a viewport-tall sticky box that centres its own contents —
+     * NOT by `top: 50%; translate: 0 -50%`. That is the obvious way to do it and it
+     * is wrong here: sticky positioning is clamped to its containing block, but a
+     * transform is applied afterwards and is not, so the figure slid up out of its
+     * own chapter and painted its opaque card over the hero. It cost the homepage
+     * 191px of its content and nothing in the CSS looked suspect. */
+    top: 0;
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: center;
     padding-block: 0;
     background-color: transparent;
   }

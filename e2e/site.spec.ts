@@ -271,6 +271,57 @@ test("a resize mid-interaction keeps the selected state", async ({ page }) => {
   await expectNoSidewaysScroll(page, "sideways scroll after resizing down to a phone");
 });
 
+test("no figure ever paints over prose", async ({ page }) => {
+  // A sticky figure that escapes its own chapter is invisible to every other
+  // check here: the page does not overflow, nothing is clipped, no test fails —
+  // it simply covers text with an opaque card. It happened, on the homepage, for
+  // 191px, because the figure was centred with a transform and transforms are not
+  // clamped to the containing block the way sticky positioning is.
+  //
+  // Asserted as a geometric invariant over the whole document rather than as a
+  // fact about the hero, so the next variant of the same mistake is caught too.
+  await page.goto("./");
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.body.scrollHeight; y += 400) {
+      window.scrollTo(0, y);
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    window.scrollTo(0, 0);
+    await new Promise((r) => setTimeout(r, 300));
+  });
+
+  const collisions = await page.evaluate(() => {
+    const intersects = (a: DOMRect, b: DOMRect) =>
+      Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1 &&
+      Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1;
+
+    const figures = [...document.querySelectorAll(".chapter__viz")];
+    const prose = [
+      ...document.querySelectorAll(".hero__standfirst, .hero__sentence, .hero__note, .beat"),
+    ];
+    const out: string[] = [];
+    for (const figure of figures) {
+      const fr = figure.getBoundingClientRect();
+      if (fr.width === 0) continue;
+      for (const text of prose) {
+        const tr = text.getBoundingClientRect();
+        if (tr.width === 0) continue;
+        // Prose inside this same chapter's own column is fine to sit beside; only
+        // a genuine overlap of the two boxes is a fault.
+        if (figure.closest("[data-chapter]") === text.closest("[data-chapter]")) continue;
+        if (intersects(fr, tr)) {
+          out.push(
+            `${figure.getAttribute("data-viz")} covers ${text.className || text.tagName}`,
+          );
+        }
+      }
+    }
+    return [...new Set(out)];
+  });
+
+  expect(collisions, collisions.join("; ")).toEqual([]);
+});
+
 test("dark mode renders with readable text", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("./");
