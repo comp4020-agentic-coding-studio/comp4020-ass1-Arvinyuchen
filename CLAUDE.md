@@ -93,9 +93,13 @@ running counts as not green, so ship with time for CI to finish.
   blocks any commit containing something shaped like an API key --- by the time
   CI sees a key it's already pushed, so the hook is the sensor that matters.
 
-Nothing here measures **accessibility** or **performance** --- wiring those
-sensors (`axe-core`, Lighthouse, or whatever you choose) is your work, and later
-in the course the spec will ask you to show how you tested both. When you do,
+Nothing in the shipped roster measures **accessibility** or **performance**.
+Some of the first is now wired locally: the Playwright suite tabs through the
+page, drives controls by keyboard, and checks a resize mid-interaction, and
+`spec/` asserts every matrix has a caption and every control is a real
+`<button>` or `<a>`. That is a floor, not an audit --- there is still no
+`axe-core` and no Lighthouse, and later in the course the spec will ask you to
+show how you tested both. When you do,
 read a green performance result honestly: it's a lab estimate from one run on a
 CI machine, not proof the site is fast for real users.
 
@@ -142,8 +146,20 @@ Three build options exist for the same reason, and all are load-bearing:
   inlines a hoisted script only while its bundle is under 4 KB; one line past
   that it emits `<script src="/comp4020-ass1-Arvinyuchen/_astro/*.js">` and the
   links check goes red with nothing in the source looking wrong. This was found
-  the hard way: adding ~15 lines to `interactive.ts` pushed the bundle to 4194
-  bytes and broke `linkinator ./dist`.
+  the hard way: adding ~15 lines to the previous hand-rolled client script (since removed)
+  pushed its bundle to 4194
+  bytes and broke `linkinator ./dist`. It also inlines the two `.woff2` faces,
+  which is why `dist/index.html` is large.
+
+**This limit is no longer sufficient on its own.** A `client:*` island is emitted
+as a separate module chunk plus a renderer entrypoint however high the limit goes
+--- inlining cannot apply to a graph that imports across chunks. So
+`linkinator.config.json` exempts the base-prefixed `_astro/` URLs, which
+linkinator auto-discovers, and which `comp4020-crit2-Arvinyuchen` already
+precedents against a byte-identical workflow step. That file also turns
+`checkFragments` on, so the eleven chapter anchors are genuinely validated, and
+skips external links --- linkinator was previously following the page's arxiv and
+github URLs, so an upstream 404 could fail a perfectly good build.
 
 If you find yourself fighting any of these, the fix is upstream of the config.
 
@@ -151,34 +167,29 @@ If you find yourself fighting any of these, the fix is upstream of the config.
 
 `src/styles/global.css` is the **only** place a colour, size, radius, or
 duration literal may be written. It defines the token set (`--ink*`,
-`--surface*`, `--accent*`, `--rule*`, `--text-*`, `--space-*`, `--radius-*`,
-`--dur*`, `--ease`) plus the reset, the prose base, `.num`, `.sr-only`, the
-focus ring, and the `prefers-reduced-motion` guard. Components consume the token
-names and never re-declare a value. It is the first and only file `stylelint`
-actually lints --- `pnpm check` runs `stylelint "**/*.css"`, and the scoped
-`<style>` blocks in `.astro` files are invisible to it, so CSS that matters
-belongs here. Token names must be kebab-case (`--text-sm`, not `--step--1`,
-which `custom-property-pattern` rejects).
+`--surface*`, `--role-*`, `--seq-*`, `--div-*`, `--rule*`, `--grid-unit`,
+`--text-*`, `--measure*`, `--space-*`, `--radius-*`, `--dur*`, `--ease`) plus the
+`@font-face` rules, the reset, the prose base, `.num`, `.math`, `.sr-only`, the
+ramp utilities, the focus ring, dark mode, and the `prefers-reduced-motion`
+guard. Token names must be kebab-case (`--text-sm`, not `--step--1`, which
+`custom-property-pattern` rejects).
 
-`src/layouts/Base.astro` owns the document shell and the client script;
-`src/pages/index.astro` is content plus the page's own layout.
+Component CSS lives in `src/styles/viz.css` and contains **only `var()`
+references** --- no literals. It is a second real stylesheet rather than Astro
+scoped blocks for one reason: `stylelint` only sees `.css` files, `<style>` blocks
+in `.astro` files are invisible to it, and React islands have no scoped-style
+mechanism at all. So both stylesheets are linted and neither is a blind spot.
 
-The page is an **essay with one figure**, not a dashboard. Layout is one
-primitive, the breakout grid in `index.astro`: `.prose` is
-`grid-template-columns: 1fr min(var(--measure), 100%) 1fr`, every child sits in
-the centre track at reading measure, and `.figure` spans `1 / -1` to escape it.
-Write that breakout as `.prose > .figure`, not `.figure` --- Astro scopes
-`.prose > *` to `.prose[cid] > [cid]`, which outranks a bare `.figure[cid]`, and
-the figure silently stays trapped in the measure column.
+Continuous ramps without breaking the literal rule: a component sets a numeric
+`--t` (sequential) or `--m` plus `data-sign` (diverging) and `color-mix()` in
+`global.css` does the interpolation. Nothing outside `global.css` names a colour,
+including the heatmaps.
 
-The split is at **900px**, not 720px. Below it, `.figure__stage` goes
-`display: contents` so `order` can put the stage tabs *between* the diagram and
-the readout, and the diagram goes `position: sticky` --- tapping a stage must
-never push its own highlight off-screen. `interactive.ts` also swaps the SVG
-`viewBox` to an encoder-only crop below 900px: at the full viewBox a 390px phone
-renders the encoder labels at ~8px, because half the canvas is the decoder
-mirror. The `<figcaption>` says this out loud rather than describing a decoder
-the phone reader can't see.
+`src/layouts/Base.astro` owns the document shell; `src/pages/index.astro` is the
+hero, the glyph nav and eleven islands.
+
+Layout is described in the week-specific section below, along with the
+`min-width: 0` rule that any ancestor of a matrix needs.
 
 ## Your process is part of the mark
 
@@ -218,56 +229,131 @@ means building legibly is part of building well.
 You don't need a name, a student number, or any identity file in the repo: we
 know whose repo it is. Spend the effort on the work.
 
-### This week: the Transformer stepper
+### This week: an interactive explainer of "Attention Is All You Need"
 
-One page, one interaction: a 4-stage tablist (`embedding`, `positional-encoding`,
-`self-attention`, `feed-forward` — the exact ids live in `src/lib/stages.ts`) drives both an
-SVG architecture diagram and a computation panel, over a fixed toy sentence defined once in
-`src/lib/toy-example.ts`. Every number on the page is real output of that module's pure
-functions (`embed`, `positionalEncoding`, `selfAttention`, `feedForward`) run over hardcoded
-toy weights — never an invented "model output". If a number changes on screen, it changed
-because a real (if tiny) computation reran, not because a string got swapped in.
+One page, eleven chapters, one stateful visualisation each, over a single six-token
+sentence defined once in `src/lib/transformer/constants.ts`:
+`the cat chased the small mouse`. `the` appears twice on purpose — two identical
+embedding rows are the only honest motivation for positional encoding, and chapter
+3 is about pulling them apart.
 
-The interaction contract is a `data-*` vocabulary, fixed before the components existed so the
-spec test and the markup agree on names:
+`d_model` is 4 with two heads of `d_k = 2`. Not smaller: at `d_model = 2` a
+two-head split gives `d_k = 1`, a "dot product" of two 1-vectors is just
+multiplication, and chapter 5 would be teaching something that isn't the thing.
 
-- `[data-testid="interaction-trigger"]` — the tablist container.
-- `button[role="tab"][data-stage]` — one of the four stage ids above; `aria-selected` marks
-  the active one.
-- `[data-stage-panel][data-stage]` — one per stage; the active one has no `hidden` attribute,
-  the rest do (`aria-hidden="true"`).
-- `[data-diagram-block][data-active]` — the SVG group matching the active stage.
-- `[data-token]` / `[data-head]` — the self-attention panel's per-token and per-head
-  (0–7) re-query buttons.
-- `[aria-live="polite"]` — the status line announcing stage changes.
+**Every number is real output of `src/lib/transformer/`, never an invented "model
+output".** Weights are literals from {-1, -0.5, 0, 0.5, 1} so the arithmetic is
+checkable by hand; the previous seeded-sine generator was reproducible but emitted
+values like `-0.537` that no reader could verify.
 
-JSDOM (what `spec/assignment-1.test.ts` runs against) parses the built HTML but never
-executes scripts, so the spec test can only assert this markup contract — correct initial
-state, right element counts — not that a click actually does anything. Real interactive
-correctness (the diagram highlight, the panel swap, the heatmap/table updating on token or
-head re-query) is verified by hand in Chrome at both marking viewports before shipping; that
-gap is a property of the test tool, not a lowered bar, so don't mistake a green spec run for
-"the interaction works."
+`derive.ts` is the load-bearing piece and the rule that goes with it is: **a
+component never formats its own arithmetic.** It renders `dotTerms` /
+`softmaxTerms` / `aggregationTerms` output. That makes "the working matches the
+matrices" a property test over all 36 q·k pairs instead of a claim in a caption.
+Chapter 8's ablations go through `runLayerVariant()` for the same reason — an
+ablation computed in the UI would be a second implementation of the layer, free to
+disagree with the real one.
 
-This machine's window manager won't give Chrome a true 1920×1080 CSS-pixel viewport —
-`resize_window` requests get silently clamped by the physical display (`window.innerWidth`
-stays fixed regardless of the requested size). Worked around by injecting a same-origin
-`<iframe>` with an explicit `width`/`height` and reading `contentWindow.innerWidth` and
-`getComputedStyle` inside it — the iframe gets its own viewport for media-query purposes, so
-this confirms the `900px` breakpoint's grid math at both marking sizes without needing the
-OS window itself to be that size. Click-driven behaviour (tab/token/head/slider) was still
-verified in the real tab, not the iframe. The iframe probe is also how the breakout grid's
-specificity bug was caught: measuring `.figure`'s real width at 1920 showed 655px (the
-measure column) rather than the intended 1152px, which no amount of reading the CSS had
-revealed.
+Head weights were tuned against what they actually compute, and one wrong answer
+is kept deliberately: the syntax head sends `cat` to `small`, a modifier belonging
+to another noun, because it has no notion of distance. Chapter 7 is built on that
+failure. The unit suite asserts it, so the on-screen claim cannot drift from the
+numbers.
 
-The diagram is original SVG (`TransformerDiagram.astro`): own palette, box proportions, and
-typography, redrawing Figure 1's diagrammatic grammar (boxed sublayers, stacked ×N
-repetition, encoder/decoder columns) rather than tracing the paper's figure or copying The
-Illustrated Transformer's specific illustrations. The decoder column is drawn dimmed and
-non-interactive — in scope for visual fidelity to Figure 1, explicitly out of scope for the
-one interaction this page teaches — and is cropped out entirely below 900px, where it would
-only cost the encoder the legibility it needs.
+#### The interaction contract
+
+Fixed before the components existed, so the spec and the markup agree on names:
+
+- `[data-chapter="01".."11"]` — chapter section, anchored at its slug.
+- `[data-viz="<slug>"]` — the island root.
+- `[data-stepper="<id>"]` with `data-testid="interaction-trigger"` — the beat
+  stepper, `role="group"`, containing `button[data-stage][data-stage-index]` with
+  `aria-current="step"` on the active one, plus `[data-step-prev]` /
+  `[data-step-next]`.
+- `.beat[data-stage][data-stage-active]` — the prose beats. Always visible.
+- `[data-matrix="<name>"]` — a matrix, rendered as a real `<table
+  data-table-view>`; `[data-cell="i,j"]` carries `data-value` at six decimals
+  alongside the visible rounded text.
+- `[data-term-expansion]` — rendered working; `[data-operand]`, `[data-product]`,
+  `[data-dot-sum]`, `[data-scaled-value]`.
+- `[data-slot="softmax|qk|scale|v"]` — the equation's addressable terms.
+- Controls: `[data-query-select]`, `[data-row-select]`, `[data-scale-toggle]`,
+  `[data-pe-toggle]`, `[data-residual-toggle]`, `[data-norm-toggle]`,
+  `[data-generation-step]`, `[data-temperature]`, `[data-change-toggle]`.
+- `[data-glyph]` — the page's `<nav>`, which is also the attention matrix.
+- `[aria-live="polite"]` — one per chapter, announcing the step.
+
+**The stepper is deliberately not a tablist.** A tablist implies panels that show
+and hide; these beats are always visible because they are what the reader scrolls
+through. Announcing them as tabs would misdescribe the page to a screen reader.
+
+#### Sensors, and what each can and cannot see
+
+`spec/assignment-1.test.ts` (JSDOM, against `dist/`) can only assert the markup
+contract — it never executes scripts. **Scope every chapter-specific selector to
+`[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
+and assertions pass for the wrong reason. That happened.
+
+`pnpm test:e2e` (Playwright, 20 tests × 3 projects: 1920×1080, 390×844, and
+reduced motion) is what actually verifies interaction, and it is the gate to run
+before shipping. It is outside CI on purpose: it needs a browser download, and a
+flake inside `check` would block the `deploy` job that depends on it.
+
+Two things that will waste an hour if you don't know them:
+
+- **`astro preview` cannot be the test server.** It daemonises when it has no
+  TTY — exactly how Playwright launches it — so Playwright reports
+  "Process from config.webServer exited early" while the server runs fine. Use
+  `scripts/preview-server.ts`, which stays in the foreground and mounts `dist/` at
+  the deployed base path (without the base path, every island chunk 404s and the
+  specs test a page with no JavaScript).
+- **Islands hydrate late.** `client:visible` server-renders the markup but its
+  handlers arrive later, so a single click can hit a button that isn't wired up
+  yet and the failure is indistinguishable from a broken control. Route
+  interactions through the retrying helpers in `e2e/`.
+
+And a rule earned the hard way: **confirm a check can fail before trusting it.**
+`linkinator` prints "scanned 1 links" with 25 anchors on the page and looks inert;
+it was verified by pointing an anchor at a missing id and watching it exit 1.
+
+#### Layout and design
+
+Chapters are React islands (`@astrojs/react`), one per chapter, `client:visible`.
+`src/styles/viz.css` holds component CSS — a second stylesheet rather than Astro
+scoped blocks, because stylelint only sees real `.css` files and React has no
+scoped-style mechanism at all. `global.css` still owns every colour, size, radius
+and duration literal; `viz.css` contains only `var()` references.
+
+`.stylelintrc.json` now enforces BEM explicitly. `stylelint-config-standard`
+rejects `__`, which never bit while all the CSS lived in `.astro` blocks it
+couldn't see.
+
+The four identity hues were chosen with a validator, not by eye, and two earlier
+candidates were rejected on grounds no amount of looking would have surfaced (a
+rose/teal query-key pair collapses under deuteranopia at ΔE 7.3). Hue carries
+identity, fill carries magnitude, and the two are never conflated. See the header
+comment in `global.css`.
+
+Layout splits at **900px**. Below it the figure is `position: sticky` at the top
+and the prose runs beneath; above it, two columns with the figure sticky and
+vertically centred. **Any ancestor of a matrix needs `min-width: 0`** — a grid or
+flex item's default minimum is its content size, so without it the 6×6 score grid
+sized the figure column to 638px inside a 390px viewport and dragged the whole
+document sideways. `overflow-x` on the matrix can only work once its ancestors are
+allowed to be narrower than their contents.
+
+The scroll-driven stage machine (`useScrollStage`) arbitrates two inputs into one
+piece of state, and both obvious approaches were wrong. Suppressing the observer
+for 700ms after a click raced the smooth scroll and silently reverted the reader's
+choice. Resuming on `scroll` meant a window resize — which fires one via reflow —
+threw the reader's place away, which is the marking notes' own "resizes mid-use"
+case. It now resumes on `wheel`, `touchmove` or a scrolling key, none of which a
+reflow can produce.
+
+`chapters.ts` holds prose as plain strings and there is no markdown step, so
+notation must be written as the characters it should render as (`dₖ`, not `d_k`).
+A spec test asserts no rendered prose contains a backtick or a `d_k`, because both
+had already shipped.
 
 ## This file is yours
 

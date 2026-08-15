@@ -1,0 +1,76 @@
+---
+import { CHAPTERS } from "../lib/transformer/chapters";
+import { runForward } from "../lib/transformer/forward";
+import { fmt } from "../lib/transformer/format";
+import { TOKENS } from "../lib/transformer/constants";
+
+// The signature: the artefact is the interface.
+//
+// The glyph is not an icon of an attention matrix — it is the attention matrix,
+// rendered from the same `runForward()` the chapters read. Rendered at build time
+// so the navigation costs no JavaScript.
+//
+// This is also the page's one `<nav>`, which `spec/invariants.test.ts` requires.
+const pass = runForward();
+const weights = pass.heads[0]!.weights;
+const tokens = [...TOKENS];
+---
+
+<nav class="glyph" aria-label="Chapters" data-glyph>
+  <table class="glyph__grid" data-table-view="glyph-weights">
+    <caption class="sr-only">
+      Attention weights for the syntax head. Row is the querying token, column is
+      the token attended to.
+    </caption>
+    <thead>
+      <tr>
+        <td></td>
+        {tokens.map((token) => <th scope="col" class="sr-only">{token}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {
+        weights.map((row, i) => (
+          <tr>
+            <th scope="row" class="sr-only">{tokens[i]}</th>
+            {row.map((value, j) => (
+              <td
+                class="glyph__cell fill-seq"
+                style={`--t: ${value}`}
+                data-cell={`${i},${j}`}
+                data-value={value.toFixed(6)}
+              >
+                <span class="sr-only">{fmt(value)}</span>
+              </td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  <ol class="glyph__chapters">
+    {
+      CHAPTERS.map((chapter) => (
+        <li>
+          {chapter.status === "ready" ? (
+            <a href={`#${chapter.slug}`} class="glyph__link num" data-chapter-link={chapter.id}>
+              {String(chapter.number).padStart(2, "0")}
+              <span class="sr-only"> — {chapter.title}</span>
+            </a>
+          ) : (
+            <span
+              class="glyph__link num"
+              data-chapter-link={chapter.id}
+              data-planned="true"
+              aria-disabled="true"
+            >
+              {String(chapter.number).padStart(2, "0")}
+              <span class="sr-only"> — {chapter.title}, not written yet</span>
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
