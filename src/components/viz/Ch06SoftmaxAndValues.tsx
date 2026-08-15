@@ -38,18 +38,25 @@ export default function Ch06SoftmaxAndValues() {
     <ChapterFrame chapter={CHAPTER} vizLabel="Softmax and weighted aggregation">
       {(stage) => (
         <>
-          <Matrix
-            name="score-row"
-            rows={[tempered]}
-            label={`Scores for “${tokens[row]}” — one row of the grid`}
-            colLabels={tokens}
-            rowLabels={[tokens[row]!]}
-            scale="diverging"
-            role="query"
-          />
+          {/* Only while it is the subject: past beat 1 the same numbers are the
+              table's "score" column, and repeating them cost 90px of a figure
+              that has to stay shorter than a phone screen. */}
+          {stage <= 1 ? (
+            <Matrix
+              name="score-row"
+              rows={[tempered]}
+              label={`Scores for “${tokens[row]}” — one row of the grid`}
+              colLabels={tokens}
+              rowLabels={[tokens[row]!]}
+              scale="diverging"
+              role="query"
+            />
+          ) : null}
 
-          {/* The step table scrolls horizontally at phone widths, so it needs to
-              be keyboard-reachable — see the note in Matrix.tsx. */}
+          {/* Two things about this table. It scrolls horizontally at phone
+              widths, so it takes a tab stop — see the note in Matrix.tsx. And it
+              stays visible through the last beat on purpose: the temperature
+              slider's whole point is watching these weights redistribute. */}
           {stage >= 1 ? (
             <div
               className="softmax-steps"
@@ -115,8 +122,11 @@ export default function Ch06SoftmaxAndValues() {
             />
           ) : null}
 
-          {stage >= 3 ? (
-            <>
+          {/* Grouped as a `.pair` so on a phone the value matrix and its working
+              sit side by side and scroll, rather than stacking to 1164px in an
+              844px viewport. */}
+          {stage === 3 ? (
+            <div className="pair">
               <Matrix
                 name="v"
                 rows={head.v}
@@ -150,7 +160,7 @@ export default function Ch06SoftmaxAndValues() {
                   </p>
                 ))}
               </div>
-            </>
+            </div>
           ) : null}
 
           <div className="controls">

@@ -1142,3 +1142,75 @@ tr[data-dimmed="true"] {
 .reveal {
   min-width: 0;
 }
+
+/*
+ * Narrow screens: groups of side-by-side figures scroll sideways instead of
+ * stacking.
+ *
+ * A display lint over every chapter at 390x844 found the sticky figure taller
+ * than the viewport on ten of eleven chapters — up to 2306px in an 844px
+ * viewport. A `position: sticky` element taller than the viewport cannot stick:
+ * it scrolls away, and the whole premise of a figure that stays put while the
+ * prose moves past collapses. Stacking two matrices vertically was most of that
+ * height.
+ *
+ * So they stay in a row and the row scrolls, which halves the height and reuses
+ * the horizontal-scroll affordance the matrices already have. The tab stop added
+ * for `scrollable-region-focusable` is what keeps that reachable by keyboard.
+ */
+@media (width < 900px) {
+  .pair,
+  .projection,
+  .heads,
+  .lanes,
+  .spine {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+
+    /* Snap so a swipe lands on a whole matrix rather than halfway across one. */
+    scroll-snap-type: x proximity;
+  }
+
+  .spine,
+  .lanes {
+    flex-direction: row;
+  }
+
+  .lane {
+    flex: 0 0 86%;
+  }
+
+  /* In a no-wrap strip the *strip* owns the overflow, so its children must keep
+   * their natural width. Without this, flex shrank each matrix to fit and clipped
+   * the cells mid-number — the height was fixed and the numbers became
+   * unreadable, which is a worse bug than the one being fixed. */
+  .pair > *,
+  .projection > *,
+  .heads > *,
+  .lanes > *,
+  .spine > *,
+  .curves > * {
+    flex: 0 0 auto;
+    max-width: none;
+    scroll-snap-align: start;
+  }
+
+  .pair > .working,
+  .spine > .working {
+    min-width: 34ch;
+  }
+
+  /* The curve panels are wide and short; side by side they fit two to a screen
+     with a scroll, where stacked they cost 200px each. */
+  .curves {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .curve {
+    width: 78%;
+  }
+}

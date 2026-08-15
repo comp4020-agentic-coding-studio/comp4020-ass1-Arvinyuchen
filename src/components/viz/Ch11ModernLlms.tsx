@@ -88,7 +88,7 @@ export default function Ch11ModernLlms() {
             document.
           </p>
 
-          {stage >= 1 ? (
+          {stage === 1 ? (
             <ul className="diff" data-diff>
               {CHANGES.map((change) => {
                 const active = on.has(change.id);
@@ -115,7 +115,7 @@ export default function Ch11ModernLlms() {
             </ul>
           ) : null}
 
-          {stage >= 1 ? (
+          {stage === 1 ? (
             <p className="figure-note" data-hedge>
               {on.size === 0
                 ? "Nothing switched on yet — this is the 2017 architecture."

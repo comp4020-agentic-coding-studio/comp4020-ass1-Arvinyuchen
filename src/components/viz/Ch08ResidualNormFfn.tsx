@@ -30,35 +30,44 @@ export default function Ch08ResidualNormFfn() {
     <ChapterFrame chapter={CHAPTER} vizLabel="Residual, normalisation and the feed-forward network">
       {(stage) => (
         <>
+          {/* The spine shows a window on the pipeline, not all of it. Rendering
+              every stage at once made this figure 2082px tall in a 1080px
+              viewport, which defeats the sticky figure it lives in — and the
+              chapter is about disclosure anyway, so earlier stages drop away as
+              the reader moves past them. */}
           <div className="spine" data-spine>
-            <Matrix
-              name="x"
-              rows={pass.x}
-              label="X — into the layer"
-              rowLabels={tokens}
-              colLabels={dims}
-              scale="diverging"
-              role="neutral"
-              selectedRow={row}
-              onRow={setRow}
-            />
+            {stage === 0 ? (
+              <>
+                <Matrix
+                  name="x"
+                  rows={pass.x}
+                  label="X — into the layer"
+                  rowLabels={tokens}
+                  colLabels={dims}
+                  scale="diverging"
+                  role="neutral"
+                  selectedRow={row}
+                  onRow={setRow}
+                />
 
-            <p className="spine__op num" aria-hidden="true">
-              {residual ? "+ attention" : "attention only"}
-            </p>
+                <p className="spine__op num" aria-hidden="true">
+                  {residual ? "+ attention" : "attention only"}
+                </p>
 
-            <Matrix
-              name="residual-1"
-              rows={variant.afterAttention}
-              label={residual ? "X + attention(X)" : "attention(X), input discarded"}
-              rowLabels={tokens}
-              colLabels={dims}
-              scale="diverging"
-              role="neutral"
-              selectedRow={row}
-            />
+                <Matrix
+                  name="residual-1"
+                  rows={variant.afterAttention}
+                  label={residual ? "X + attention(X)" : "attention(X), input discarded"}
+                  rowLabels={tokens}
+                  colLabels={dims}
+                  scale="diverging"
+                  role="neutral"
+                  selectedRow={row}
+                />
+              </>
+            ) : null}
 
-            {stage >= 1 && variant.norm1 ? (
+            {stage === 1 && variant.norm1 ? (
               <>
                 <p className="spine__op num" aria-hidden="true">
                   LayerNorm
@@ -76,7 +85,7 @@ export default function Ch08ResidualNormFfn() {
               </>
             ) : null}
 
-            {stage >= 2 ? (
+            {stage === 2 ? (
               <>
                 <p className="spine__op num" aria-hidden="true">
                   4 → {D_FF} → ReLU → 4

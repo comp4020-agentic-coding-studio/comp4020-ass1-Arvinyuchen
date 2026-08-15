@@ -45,7 +45,7 @@ export default function Ch09MaskedAttention() {
             />
           ) : null}
 
-          {stage >= 1 ? (
+          {stage === 1 ? (
             <Matrix
               name="masked-scores"
               rows={scores}

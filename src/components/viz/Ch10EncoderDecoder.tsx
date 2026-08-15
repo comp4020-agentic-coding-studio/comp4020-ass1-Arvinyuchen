@@ -114,7 +114,7 @@ export default function Ch10EncoderDecoder() {
           <Column title="Encoder" blocks={ENCODER} side="encoder" lit={stage !== 1} />
           <Column title="Decoder" blocks={DECODER} side="decoder" lit={stage !== 0} />
 
-          {stage >= 2 ? (
+          {stage === 2 ? (
             <p className="figure-note" data-cross-note>
               The cross-attention block is the only place the two columns meet. It is the
               same operation as every other attention block on this page — the only

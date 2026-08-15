@@ -44,8 +44,17 @@ export default function Ch03PositionalEncoding() {
     <ChapterFrame chapter={CHAPTER} vizLabel="Sinusoidal positional encoding">
       {(stage) => (
         <>
+          {/* The curve strip scrolls sideways on phones and contains only SVG,
+              so it has no focusable content of its own and needs a tab stop —
+              same reason as the matrices. */}
           {stage >= 1 ? (
-            <div className="curves" data-curves>
+            <div
+              className="curves"
+              data-curves
+              tabIndex={0}
+              role="group"
+              aria-label={`Sine and cosine curves for all ${pairs} frequency pairs`}
+            >
               {Array.from({ length: pairs }, (_, pair) => {
                 const divisor = frequencyDivisor(pair);
                 const sine = Array.from({ length: SAMPLES }, (_, s) => {
@@ -147,7 +156,7 @@ export default function Ch03PositionalEncoding() {
             />
           </div>
 
-          {stage >= 2 ? (
+          {stage === 2 ? (
             <div className="working" data-term-expansion>
               <p className="working__head">
                 Position {position} — “{tokens[position]}”, element by element
