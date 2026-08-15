@@ -1,5 +1,6 @@
 import type { ScaledDotExpansion } from "../../../lib/transformer/derive.js";
 import { fmt } from "../../../lib/transformer/format.js";
+import { tex } from "../../../lib/viz/tex.js";
 
 // The working under a cell.
 //
@@ -11,12 +12,13 @@ import { fmt } from "../../../lib/transformer/format.js";
 
 export interface TermExpansionProps {
   expansion: ScaledDotExpansion;
-  /** Labels for the two operands, e.g. `q₂` and `k₅`. */
-  aLabel: string;
-  bLabel: string;
-  /** Shown next to the divisor. `√2` reads better than `1.41`, and the reader
-   * needs to connect it to d_k. */
-  divisorLabel: string;
+  /** TeX for the two operands, e.g. `q_{\mathrm{chased}}`. */
+  aTex: string;
+  bTex: string;
+  /** TeX for the divisor, e.g. `\sqrt{d_k} = \sqrt{2} = 1.4142`. Rendered by
+   * KaTeX so it matches the equation above it rather than approximating it with
+   * Unicode. */
+  divisorTex: string;
   /** False when the reader has switched scaling off, so the division disappears
    * from the working rather than showing a divide-by-one. */
   scaled: boolean;
@@ -24,19 +26,17 @@ export interface TermExpansionProps {
 
 export function TermExpansion({
   expansion,
-  aLabel,
-  bLabel,
-  divisorLabel,
+  aTex,
+  bTex,
+  divisorTex,
   scaled,
 }: TermExpansionProps) {
   return (
     <div className="working" data-term-expansion>
-      <p className="working__head">
-        <span className="math">{aLabel}</span>
-        <span aria-hidden="true"> · </span>
-        <span className="math">{bLabel}</span>
-        <span className="sr-only"> dot </span>
-      </p>
+      <p
+        className="working__head"
+        dangerouslySetInnerHTML={{ __html: tex(String.raw`${aTex} \cdot ${bTex}`) }}
+      />
 
       <p className="working__line num">
         {expansion.terms.map((term, i) => (
@@ -73,7 +73,10 @@ export function TermExpansion({
           <span className="working__op" aria-hidden="true">
             ÷{" "}
           </span>
-          <span className="math working__divisor">{divisorLabel}</span>
+          <span
+            className="working__divisor"
+            dangerouslySetInnerHTML={{ __html: tex(divisorTex) }}
+          />
           <span className="working__op" aria-hidden="true">
             {" = "}
           </span>

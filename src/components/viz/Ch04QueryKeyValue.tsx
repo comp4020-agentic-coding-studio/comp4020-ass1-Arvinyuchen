@@ -117,9 +117,9 @@ export default function Ch04QueryKeyValue() {
           {stage >= 2 ? (
             <TermExpansion
               expansion={expansion}
-              aLabel={`X(${tokens[row]})`}
-              bLabel={`W_${which.toUpperCase()} column ${col}`}
-              divisorLabel="1"
+              aTex={String.raw`X_{\mathrm{${tokens[row]}}}`}
+              bTex={String.raw`W^{${which.toUpperCase()}}_{\,${col}}`}
+              divisorTex="1"
               scaled={false}
             />
           ) : null}

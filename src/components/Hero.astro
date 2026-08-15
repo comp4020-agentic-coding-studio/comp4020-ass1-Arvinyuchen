@@ -1,12 +1,14 @@
 ---
 import { SEQ_LEN, TOKENS } from "../lib/transformer/constants";
 import figure1 from "../assets/images/transformer.png";
+import { ATTENTION_TEX } from "../lib/transformer/notation";
+import { tex } from "../lib/viz/tex";
 
 // Static on purpose. The hero is the first thing on a phone over a bad
-// connection, and none of it needs JavaScript: the equation is markup, the
-// sentence comes from the same constant every chapter reads, and the formula
-// classes are shared with the interactive version in chapter 5 so the two can't
-// drift apart typographically.
+// connection, and none of it needs JavaScript: the equation is KaTeX rendered at
+// build time, and the sentence comes from the same constant every chapter reads.
+// KaTeX emits both HTML and MathML, so the accessible reading is the MathML rather
+// than a hand-written `sr-only` gloss that could drift from the formula beside it.
 //
 // The paper's own Figure 1 sits beside the equation as an orientation cue: the
 // equation is the mechanism, the diagram is where it lives. It is reproduced with
@@ -36,26 +38,7 @@ import figure1 from "../assets/images/transformer.png";
       hand.
     </p>
 
-    <div class="hero__formula formula" aria-hidden="true">
-      <span class="formula__fn math">softmax</span>
-      <span class="formula__paren math">(</span>
-      <span class="formula__fraction">
-        <span class="formula__numerator">
-          <span class="math formula__glyph">QK<sup>T</sup></span>
-        </span>
-        <span class="formula__denominator math">
-          <math class="sqrt" display="inline">
-            <msqrt><msub><mi>d</mi><mi>k</mi></msub></msqrt>
-          </math>
-        </span>
-      </span>
-      <span class="formula__paren math">)</span>
-      <span class="formula__v math">V</span>
-    </div>
-    <p class="sr-only">
-      The equation: softmax of Q times K transpose, divided by the square root of
-      d sub k, times V.
-    </p>
+    <div class="hero__formula" set:html={tex(ATTENTION_TEX, { display: true })} />
 
     <ol class="hero__sentence" aria-label={`The worked example, ${SEQ_LEN} tokens`}>
       {

@@ -9,7 +9,6 @@ import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Formula, type Slot } from "./primitives/Formula.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
 import { Reveal } from "./primitives/Reveal.tsx";
-import { SqrtDk } from "./primitives/Sqrt.tsx";
 import { TermExpansion } from "./primitives/TermExpansion.tsx";
 
 // Chapter 5. The one the page is built around.
@@ -55,14 +54,13 @@ export default function Ch05ScaledDotProduct() {
         <>
           <Formula
             active={SLOT_BY_STAGE[stage] ?? null}
-            divisor={scaled ? <SqrtDk /> : null}
-            divisorLabel={scaled ? "the square root of d sub k" : null}
+            scaled={scaled}
             qk={
               stage >= 3 ? (
                 <Matrix
                   name="scores"
                   rows={scores}
-                  label={scaled ? "QKᵀ divided by √(dₖ) — scores" : "QKᵀ — raw scores"}
+                  label={scaled ? "Scores — QKᵀ scaled" : "Raw scores — QKᵀ"}
                   rowLabels={tokens}
                   colLabels={tokens}
                   scale="diverging"
@@ -120,9 +118,9 @@ export default function Ch05ScaledDotProduct() {
             <Reveal id="working" order={1}>
               <TermExpansion
                 expansion={expansion}
-                aLabel={`q(${tokens[row]})`}
-                bLabel={`k(${tokens[col]})`}
-                divisorLabel={`√dₖ = √${D_K} = ${fmt(SCALE, 4)}`}
+                aTex={String.raw`q_{\mathrm{${tokens[row]}}}`}
+                bTex={String.raw`k_{\mathrm{${tokens[col]}}}`}
+                divisorTex={String.raw`\sqrt{d_k} = \sqrt{${D_K}} = ${fmt(SCALE, 4)}`}
                 scaled={scaled}
               />
             </Reveal>
@@ -158,7 +156,7 @@ export default function Ch05ScaledDotProduct() {
                   aria-pressed={scaled}
                   onClick={() => setScaled((on) => !on)}
                 >
-                  ÷ √dₖ {scaled ? "on" : "off"}
+                  scaling {scaled ? "on" : "off"}
                 </button>
               </div>
             ) : null}

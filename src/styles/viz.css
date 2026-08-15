@@ -33,15 +33,18 @@
 
 @media (width >= 900px) {
   .hero {
-    /* `auto` on the figure so the text column keeps its own measure and the
-     * figure takes only what it needs, rather than the two splitting the width
-     * and squeezing the display title. */
-    grid-template-columns: minmax(0, 1fr) auto;
+    /* The text column is sized to the measure its prose actually uses, not to
+     * `1fr`. As `1fr` it swallowed all the leftover width — the standfirst wraps at
+     * 587px but the track was 1072px, so the figure was pushed to the far right
+     * edge with 485px of dead space between them. `justify-content: start` then
+     * keeps both tracks hugging the left instead of spreading. */
+    grid-template-columns: minmax(0, calc(var(--grid-unit) * 84)) auto;
     align-items: start;
+    justify-content: start;
 
     /* Columns are gapped; rows are not, because the vertical rhythm already comes
      * from each element's own margin and a row gap would double it. */
-    gap: 0 var(--space-7);
+    gap: 0 var(--space-6);
   }
 
   /* The eyebrow and the title own their whole line — the figure begins beside the
@@ -86,16 +89,20 @@
   text-wrap: pretty;
 }
 
-/* Scoped through `.hero` deliberately. `.formula` sets `justify-content: center`
- * and is declared later in this file, so at equal specificity it won it — the
- * equation floated in the middle of a 1000px column while everything around it was
- * flush left. This is the selector-ordering trap CLAUDE.md warns about, and the
- * fix is specificity rather than reordering, so moving a block later cannot
- * silently undo it again. */
-.hero .hero__formula {
-  justify-content: flex-start;
+.hero__formula {
   margin-block-start: var(--space-6);
-  font-size: var(--text-xl);
+
+  /* KaTeX display mode multiplies this by 1.21, so --text-lg lands around 32px —
+   * large enough to be the hero's second voice after the title, small enough not
+   * to compete with it. --text-xl came out at 68px, which did. */
+  font-size: var(--text-lg);
+}
+
+/* KaTeX centres display equations and adds a 1em vertical margin. Neither suits a
+ * flush-left column whose rhythm is already set by the elements around it. */
+.hero__formula .katex-display {
+  margin: 0;
+  text-align: start;
 }
 
 .hero__figure {
@@ -641,14 +648,8 @@ tr[data-dimmed="true"] {
 }
 
 .formula__fn,
-.formula__paren,
 .formula__v {
   font-size: var(--text-lg);
-}
-
-.formula__paren {
-  color: var(--ink-3);
-  font-size: var(--text-xl);
 }
 
 .formula__fraction {
@@ -672,9 +673,14 @@ tr[data-dimmed="true"] {
 }
 
 .formula__denominator {
-  padding-block-start: var(--space-1);
+  /* `align-self: stretch` is what makes this a fraction bar rather than a stub.
+   * The fraction is a flex column centred on its cross axis, so the denominator
+   * shrinks to its own text and the border went with it — a 40px rule under a
+   * 900px-wide numerator. Stretching it makes the border span the fraction. */
+  align-self: stretch;
+  padding-block-start: var(--space-2);
   border-block-start: var(--hairline) solid currentcolor;
-  font-size: var(--text-md);
+  text-align: center;
 }
 
 .formula__glyph {
@@ -1218,10 +1224,6 @@ tr[data-dimmed="true"] {
     gap: var(--space-1);
   }
 
-  .formula:has(.formula__numerator[data-expanded="true"]) .formula__paren {
-    display: none;
-  }
-
   .formula:has(.formula__numerator[data-expanded="true"]) .formula__fn {
     align-self: flex-start;
     font-size: var(--text-md);
@@ -1310,20 +1312,3 @@ tr[data-dimmed="true"] {
   }
 }
 
-/* ---------------------------------------------------------------- radical */
-
-/*
- * Square roots are MathML `<msqrt>`; see the note in Sqrt.tsx for why neither
- * U+221A nor `text-decoration: overline` can do the job. All that is needed here
- * is to make the element inherit the equation face instead of the browser's
- * default math font, so the radical matches the rest of the formula.
- */
-.sqrt {
-  font-family: var(--font-math);
-  font-style: italic;
-}
-
-.sqrt msqrt {
-  /* A touch of breathing room between the hook and what it covers. */
-  padding-inline-end: 0.06em;
-}

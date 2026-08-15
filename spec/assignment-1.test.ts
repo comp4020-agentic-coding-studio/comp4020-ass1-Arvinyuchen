@@ -393,6 +393,38 @@ describe("built assets resolve on disk", () => {
   });
 });
 
+describe("equations are rendered, not printed", () => {
+  // KaTeX runs at build time, so if it ever stops running the page ships raw TeX
+  // as visible text. That is invisible to a typecheck and to every other test
+  // here, and it is exactly the failure this catches.
+  it("renders the hero equation through KaTeX, in the built HTML", () => {
+    const doc = loadBuiltPage();
+    const formula = doc.querySelector(".hero__formula");
+    expect(formula, "no hero formula").not.toBeNull();
+    expect(formula!.querySelector(".katex"), "the hero equation is not KaTeX output").not.toBeNull();
+    // KaTeX emits MathML alongside the HTML, which is what a screen reader reads.
+    expect(formula!.querySelector("math"), "no MathML for assistive technology").not.toBeNull();
+  });
+
+  it("leaks no TeX source into visible text", () => {
+    const doc = loadBuiltPage();
+    // KaTeX keeps the source in an `<annotation>` inside the MathML, which is
+    // correct and must not be mistaken for a leak, so it is removed first.
+    for (const node of doc.querySelectorAll("annotation")) node.remove();
+    const text = doc.body.textContent ?? "";
+    for (const command of ["\\frac", "\\sqrt", "\\operatorname", "\\mathrm", "\\cdot"]) {
+      expect(text, `raw TeX on the page: ${command}`).not.toContain(command.replace("\\", "\\"));
+    }
+  });
+
+  it("renders every chapter-5 equation fragment", () => {
+    const doc = loadBuiltPage();
+    const chapter = doc.querySelector('[data-chapter="05"]')!;
+    // softmax(, the collapsed QKᵀ glyph, the denominator, )V.
+    expect(chapter.querySelectorAll(".katex").length).toBeGreaterThanOrEqual(4);
+  });
+});
+
 describe("accessibility floor", () => {
   it("labels every matrix", () => {
     const doc = loadBuiltPage();

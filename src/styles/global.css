@@ -56,12 +56,14 @@
   /* type: three roles, each justified by the subject.
    * - ui    a narrow grotesque for prose and controls
    * - mono  every number on the page, tabular so columns align
-   * - math  equations only. The paper is LaTeX, so formulas get a serif with
-   *         Computer Modern's texture; Times is the honest fallback, since it is
-   *         what Computer Modern was cut to sit beside. */
+   *
+   * There is no math role here any more. Equations are rendered by KaTeX, which
+   * ships its own Computer Modern faces — which is also the first time this page
+   * has actually *had* Computer Modern. The old `--font-math` stack asked for
+   * "Latin Modern Roman" without self-hosting it, so every visitor fell through to
+   * Times while the design notes claimed a LaTeX texture the page never delivered. */
   --font-ui: instrument-sans, ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: geist-mono, ui-monospace, sfmono-regular, "SF Mono", menlo, monospace;
-  --font-math: "Latin Modern Roman", "Computer Modern Serif", cmr10, "Times New Roman", times, serif;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1.0625rem;
@@ -299,13 +301,6 @@ button {
   font-size: 0.9em;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "zero" 1;
-}
-
-/* Equations. The only place --font-math appears. */
-.math {
-  font-family: var(--font-math);
-  font-style: italic;
-  letter-spacing: 0.01em;
 }
 
 .sr-only {

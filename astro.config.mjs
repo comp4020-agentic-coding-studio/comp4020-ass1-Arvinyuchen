@@ -43,7 +43,19 @@ export default defineConfig({
       // has to import across chunks. So the base-prefixed `_astro/` URLs are
       // now exempted in linkinator.config.json instead. The limit stays because
       // it still keeps the non-island hoisted script inline.
-      assetsInlineLimit: 65536,
+      // A function rather than the bare 65536, because KaTeX brings 20 woff2 faces
+      // and every one of them is under that limit — they would each be base64'd
+      // into katex.min.css, which `inlineStylesheets: "always"` then inlines into
+      // the HTML. That is roughly half a megabyte of base64 in index.html for
+      // fonts the browser would otherwise fetch two of.
+      //
+      // The numeric limit has to be reimplemented here: returning `undefined` from
+      // this hook falls back to Vite's 4KB default, not to the value above, which
+      // would quietly break the hoisted-script inlining the links check depends on.
+      assetsInlineLimit: (filePath, content) => {
+        if (/KaTeX_[^/]*\.(?:woff2?|ttf)$/.test(filePath)) return false;
+        return content.length <= 65536;
+      },
     },
   },
 });
