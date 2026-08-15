@@ -269,8 +269,10 @@
   }
 
   .chapter__prose {
-    gap: 60vh;
-    padding-block: 30vh;
+    /* Was 60vh / 30vh, which made the document 39,000px tall at 1728 wide: a lot
+     * of scrolling between changes, then everything at once. */
+    gap: 44vh;
+    padding-block: 20vh;
   }
 
   .chapter__figure {
@@ -455,7 +457,13 @@ tr[data-selected="true"] > .matrix__row-head {
   padding: 0;
   border-radius: var(--radius-sm);
   text-align: center;
-  transition: filter var(--dur) var(--ease);
+
+  /* Background is transitioned, not just filter: when the reader toggles scaling
+   * or picks a different query, the fills should visibly move to their new values
+   * rather than cutting. That is the transformation the chapter is about. */
+  transition:
+    background-color var(--dur) var(--ease),
+    filter var(--dur) var(--ease);
 }
 
 .matrix__cell[data-masked="true"] {
@@ -1128,4 +1136,9 @@ tr[data-dimmed="true"] {
     align-self: flex-start;
     font-size: var(--text-md);
   }
+}
+
+/* Reveal wrappers must not introduce a stacking or sizing surprise. */
+.reveal {
+  min-width: 0;
 }

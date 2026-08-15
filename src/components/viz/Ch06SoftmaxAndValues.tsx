@@ -48,8 +48,16 @@ export default function Ch06SoftmaxAndValues() {
             role="query"
           />
 
+          {/* The step table scrolls horizontally at phone widths, so it needs to
+              be keyboard-reachable — see the note in Matrix.tsx. */}
           {stage >= 1 ? (
-            <div className="softmax-steps" data-softmax-steps>
+            <div
+              className="softmax-steps"
+              data-softmax-steps
+              tabIndex={0}
+              role="group"
+              aria-label="Softmax, step by step"
+            >
               <table data-table-view="softmax">
                 <caption className="matrix__caption">Softmax, step by step</caption>
                 <thead>

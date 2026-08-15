@@ -8,6 +8,7 @@ import { absMax } from "../../lib/viz/ramp.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Formula, type Slot } from "./primitives/Formula.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
+import { Reveal } from "./primitives/Reveal.tsx";
 import { TermExpansion } from "./primitives/TermExpansion.tsx";
 
 // Chapter 5. The one the page is built around.
@@ -83,42 +84,46 @@ export default function Ch05ScaledDotProduct() {
               server-rendered HTML carries real matrices: a reader with no
               JavaScript still gets Q, K and the equation, not an empty frame. */}
           {stage < 3 ? (
-            <div className="pair">
-              <Matrix
-                name="q"
-                rows={head.q}
-                label="Q — one query per token"
-                rowLabels={tokens}
-                colLabels={DIM_LABELS}
-                scale="diverging"
-                role="query"
-                selectedRow={row}
-                focusRow={stage >= 2}
-                onRow={setRow}
-              />
-              <Matrix
-                name="k"
-                rows={head.k}
-                label="K — one key per token"
-                rowLabels={tokens}
-                colLabels={DIM_LABELS}
-                scale="diverging"
-                role="key"
-                selectedRow={col}
-                focusRow={stage >= 2}
-                onRow={setCol}
-              />
-            </div>
+            <Reveal id="qk-pair">
+              <div className="pair">
+                <Matrix
+                  name="q"
+                  rows={head.q}
+                  label="Q — one query per token"
+                  rowLabels={tokens}
+                  colLabels={DIM_LABELS}
+                  scale="diverging"
+                  role="query"
+                  selectedRow={row}
+                  focusRow={stage >= 2}
+                  onRow={setRow}
+                />
+                <Matrix
+                  name="k"
+                  rows={head.k}
+                  label="K — one key per token"
+                  rowLabels={tokens}
+                  colLabels={DIM_LABELS}
+                  scale="diverging"
+                  role="key"
+                  selectedRow={col}
+                  focusRow={stage >= 2}
+                  onRow={setCol}
+                />
+              </div>
+            </Reveal>
           ) : null}
 
           {stage >= 2 ? (
-            <TermExpansion
-              expansion={expansion}
-              aLabel={`q(${tokens[row]})`}
-              bLabel={`k(${tokens[col]})`}
-              divisorLabel={`√dₖ = √${D_K} = ${fmt(SCALE, 4)}`}
-              scaled={scaled}
-            />
+            <Reveal id="working" order={1}>
+              <TermExpansion
+                expansion={expansion}
+                aLabel={`q(${tokens[row]})`}
+                bLabel={`k(${tokens[col]})`}
+                divisorLabel={`√dₖ = √${D_K} = ${fmt(SCALE, 4)}`}
+                scaled={scaled}
+              />
+            </Reveal>
           ) : null}
 
           <div className="controls">
@@ -158,12 +163,14 @@ export default function Ch05ScaledDotProduct() {
           </div>
 
           {stage >= 3 ? (
-            <p className="ramp-legend">
-              <span>{fmt(-domainMax)}</span>
-              <span className="ramp-legend__bar" data-scale="diverging" aria-hidden="true" />
-              <span>{fmt(domainMax)}</span>
-              <span>negative ← zero → positive</span>
-            </p>
+            <Reveal id="legend" order={2}>
+              <p className="ramp-legend">
+                <span>{fmt(-domainMax)}</span>
+                <span className="ramp-legend__bar" data-scale="diverging" aria-hidden="true" />
+                <span>{fmt(domainMax)}</span>
+                <span>negative ← zero → positive</span>
+              </p>
+            </Reveal>
           ) : null}
         </>
       )}

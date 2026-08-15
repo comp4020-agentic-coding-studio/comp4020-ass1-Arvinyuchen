@@ -59,11 +59,22 @@ export function Matrix({
 }: MatrixProps) {
   const max = domainMax ?? absMax(rows);
 
+  // A matrix wider than its column scrolls horizontally, which at 390px is most
+  // of them. axe-core's `scrollable-region-focusable` is the reason this matters:
+  // a scrollable box has to be reachable by keyboard or a keyboard-only reader
+  // simply cannot see the columns past the edge. Matrices with clickable cells
+  // already contain focusable content, so only the read-only ones need a stop of
+  // their own — adding one to every matrix would just double the tabbing.
+  const needsScrollStop = !onCell && !onRow;
+
   return (
     <figure
       className={`matrix${className ? ` ${className}` : ""}`}
       data-matrix={name}
       style={{ "--role": roleVar(role) } as CSSProperties}
+      {...(needsScrollStop
+        ? { tabIndex: 0, role: "group" as const, "aria-label": label }
+        : {})}
     >
       <table data-table-view={name}>
         <caption className="matrix__caption">{label}</caption>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Chapter } from "../../lib/transformer/chapters.js";
 import { useScrollStage } from "../../lib/viz/useScrollStage.js";
+import { RevealFrame } from "./primitives/Reveal.tsx";
 
 // The shell every chapter shares: a sticky visualisation, prose beats that scroll
 // past it, and a stepper.
@@ -36,7 +37,9 @@ export function ChapterFrame({ chapter, children, vizLabel }: ChapterFrameProps)
       <div className="chapter__body">
         <div className="chapter__figure">
           <div className="chapter__viz" data-viz={chapter.slug}>
-            {children(stage)}
+            {/* Height changes are animated so mounting a table doesn't shove the
+                prose below it down in a single frame. */}
+            <RevealFrame>{children(stage)}</RevealFrame>
           </div>
 
           <div
