@@ -37,13 +37,19 @@ import { tex } from "../lib/viz/tex";
 ---
 
 <header class="hero">
-  <h1 class="hero__title">Attention Is All You Need</h1>
-
   <div class="hero__body">
+    {/* The title lives in the text column, so the hero is two columns and nothing
+        else: words on the left, the paper's figures on the right. It spanned both
+        columns while the figure was a 320px thumbnail and the headline had a full
+        1392px to itself; now the figure is the same height as the prose beside it,
+        and a headline crossing above them both left the two columns hanging off a
+        band of their own. */}
+    <h1 class="hero__title">Attention Is All You Need</h1>
+
     {/* Under the title rather than above it. As an eyebrow it owned a row of its
         own across the hero's full width, which cost 39px at the top of a layout
         budgeted to one screen; in the body column it costs nothing, because that
-        column is 300px shorter than the figure beside it. */}
+        column is shorter than the figure beside it. */}
     <p class="hero__eyebrow num">Vaswani et al., 2017</p>
 
     <p class="hero__standfirst">

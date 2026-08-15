@@ -423,6 +423,23 @@ test("the whole hero fits one screen at the marking viewport", async ({ page }) 
   ).toBeLessThanOrEqual(viewport.height);
 });
 
+test("the hero's text and figures start on the same line", async ({ page }) => {
+  // The hero is two columns and nothing else, so they begin together. Both halves
+  // of this were set in the desktop media block first and both lost silently: a
+  // media query adds no specificity, so the later base rules for `.hero__title`'s
+  // top margin and `.hero__figure`'s margin won on source order and left the title
+  // 16px low and the figure 24px below that. Nothing else here can see an 8px drift.
+  test.skip(page.viewportSize()!.width < 900, "single column below the split");
+
+  await page.goto("./");
+  const delta = await page.evaluate(() => {
+    const top = (sel: string) => document.querySelector(sel)!.getBoundingClientRect().top;
+    return Math.round(Math.abs(top(".hero__title") - top(".hero__figure")));
+  });
+
+  expect(delta, `hero title and figure tops are ${delta}px apart`).toBeLessThanOrEqual(2);
+});
+
 test("the hero's two figure columns end level", async ({ page }) => {
   // The composition is what lets the block fill its column without one 990px-tall
   // image setting the height, and it only works while the columns stay balanced —

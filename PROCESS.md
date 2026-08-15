@@ -65,4 +65,4 @@ matrices beside it. Built on the four-stage prototype
 ## Before you ship
 
 `pnpm check` runs typecheck, build, lint and 87 tests; `pnpm check:evidence` checks
-these citations. `pnpm test:e2e` is a local gate of 123, axe-core included.
+these citations. `pnpm test:e2e` is a local gate of 125, axe-core included.

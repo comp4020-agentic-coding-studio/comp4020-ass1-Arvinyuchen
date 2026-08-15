@@ -63,26 +63,12 @@
     gap: 0 var(--space-6);
   }
 
-  /* The title owns its whole line — the figure begins beside the body, not beside
-   * the headline. Auto-placement then puts `.hero__body` in column 1 and the figure
-   * in column 2 of the row below without either needing an explicit position. */
-  .hero__title {
-    grid-column: 1 / -1;
-
-    /* First element in the hero now, so nothing above it to be separated from. */
-    margin-block-start: 0;
-  }
-
+  /* Two grid children, two columns: the text and the figures. Auto-placement puts
+   * them in that order, so neither needs an explicit position. */
   .hero__body {
     grid-column: 1;
   }
 
-  /* No measure cap once the title has the full width to itself: the hero's own
-   * max-width is the constraint, and 22ch would break "Attention Is All You Need"
-   * across two lines for no reason. */
-  .hero .hero__title {
-    max-width: none;
-  }
 
 }
 
@@ -94,9 +80,14 @@
   text-transform: uppercase;
 }
 
+/* No top margin and no measure cap: the title is the first thing in the text
+ * column at every width, and the column decides where it wraps. Both values were
+ * set in the desktop block first and both lost — a media query adds no
+ * specificity, so a later base rule wins on source order, which put the title 16px
+ * low and the figure 24px below it. Second time that trap has bitten in this file;
+ * the fix is to change the base rule, not to add an override. */
 .hero__title {
-  margin-block-start: var(--space-3);
-  max-width: 22ch;
+  margin-block-start: 0;
 }
 
 .hero__standfirst {
@@ -140,11 +131,10 @@
    * is no dead space to the right of the image, so there is nothing to align
    * against. */
 
-  /* Aligns roughly with the top of the standfirst on desktop, and separates the
-   * figure from the note when the columns stack. The figure's own margin rather
-   * than a row gap, so trimming it for the one-screen budget shortens the tall
-   * column without moving the standfirst. */
-  margin: var(--space-4) 0 0;
+  /* No top margin on desktop: the figure is a column, and it starts level with the
+   * title beside it. The stacked case adds one below, where the figure follows the
+   * note and needs separating from it. */
+  margin: 0;
 }
 
 /* One column until the hero splits; the two-column composition below is what lets
@@ -201,6 +191,10 @@
 @media (width < 900px) {
   .hero__figure {
     max-width: calc(var(--grid-unit) * 32);
+
+    /* Stacked, the figure follows the note instead of standing beside it, so here
+     * it does need separating. */
+    margin-block-start: var(--space-4);
   }
 
   /* Figure 2's panels are supplementary here: chapters 5 and 7 teach both

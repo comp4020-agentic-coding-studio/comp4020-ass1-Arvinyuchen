@@ -307,7 +307,7 @@ contract — it never executes scripts. **Scope every chapter-specific selector 
 `[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
 and assertions pass for the wrong reason. That happened.
 
-`pnpm test:e2e` (Playwright, 123 tests over 3 projects: 1920×1080, 390×844, and
+`pnpm test:e2e` (Playwright, 125 tests over 3 projects: 1920×1080, 390×844, and
 reduced motion) is what actually verifies interaction, and it is the gate to run
 before shipping. It is outside CI on purpose: it needs a browser download, and a
 flake inside `check` would block the `deploy` job that depends on it.
@@ -500,15 +500,28 @@ edge. `.glyph` was capped at 130 for months: two centred boxes of different widt
 never line up, and at 1728 that started the nav 200px right of the title while
 looking entirely deliberate in the source.
 
-**The hero is budgeted to one screen at 1920 × 1080**: nav 76 + padding 48 +
-eyebrow and title 140 + figure block 742 + padding 48 = 1054. It was 1274, so the
-figures the hero exists to show sat below the fold at 100% zoom on the viewport
-this is marked at. The budget is whitespace only, which means a couple of added
-lines of hero copy would spend it — an e2e test asserts `.hero`'s bottom against
-the viewport height so that arrives as a failure rather than as a surprise at a
-crit. A window shorter than ~1054px still scrolls; the alternative was sizing the
-figure from viewport height, which always fits and pulls its right edge back off
-the chapters' edge, and the alignment was the thing asked for.
+**The hero is two columns and nothing else** — the title, author line, standfirst,
+equation, sentence and note on the left, the three figures on the right, tops
+level and bottoms 20px apart at 1920. The title spanned both columns while the
+figure was a 320px thumbnail; now that the figure is as tall as the prose, a
+headline crossing above them left the two columns hanging off a band of their own.
+It wraps to two lines in its column, and the column — not a `22ch` cap — is what
+decides that.
+
+**The hero fits one screen at 1920 × 1080**, the viewport this is marked at: 910px
+with 170px to spare. It was 1274, so the figures the hero exists to show sat below
+the fold at 100% zoom. An e2e test asserts `.hero`'s bottom against the viewport
+height, because the margin is whitespace and a few added lines of hero copy would
+spend it. A window shorter than ~910px still scrolls; the alternative was sizing
+the figure from viewport height, which always fits and pulls its right edge back
+off the chapters' edge, and the alignment was the thing asked for.
+
+**A media query adds no specificity.** Four rules in the hero have now been
+written inside `@media (width >= 900px)` and silently beaten by a later base rule
+on source order — the figure's height, the title's top margin, the figure's own
+margin, and the image's `object-fit`. The symptom is a value that is obviously
+present in the file and obviously not applied. Change the base rule and put the
+narrow-viewport value in the `< 900px` block instead of layering an override.
 
 **A width defect is measured on the ink, not on the container.** `.hero` and
 `.chapter` computed to identical boxes --- same `max-width`, same padding, same left
