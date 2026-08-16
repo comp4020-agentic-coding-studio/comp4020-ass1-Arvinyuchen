@@ -2,9 +2,28 @@
 
 An interactive explainer of "Attention Is All You Need" on one six-token sentence
 — `the cat chased the small mouse` — with weights checkable by hand.
-Eleven chapters, one stateful visualisation each, every number computed from the
+Ten chapters, one stateful visualisation each, every number computed from the
 matrices beside it. Built on the four-stage prototype
 [`7eb7683...27c03f7`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/compare/7eb7683...27c03f7).
+
+## What is on the page now
+
+A hero that reproduces the paper's Figures 1 and 2 beside an interactive
+attention demo — click a token, watch it compare, weight and mix — then ten
+chapters from "why not recurrence" to the encoder–decoder architecture. The nav
+is the attention matrix itself, rendered at build time from the same
+`runForward()` the chapters read.
+
+Every chapter is the same shell at every width: a heading, the paragraph for the
+step you are on, and a figure whose stepper is the only thing that changes it.
+The column is centred and its contents are flush left. Blocks inside the figure
+enter from the side you are travelling from and leave the other way; nothing
+hard-cuts.
+
+`d_model` is 4, two heads of `d_k = 2`, weights drawn from
+{-1, -0.5, 0, 0.5, 1}. Every equation is KaTeX at build time, every number is
+real output of `src/lib/transformer/`, and one wrong answer is kept on purpose —
+the syntax head sends `cat` to `small`, which is what chapter 7 is built on.
 
 ## The moments that mattered
 
