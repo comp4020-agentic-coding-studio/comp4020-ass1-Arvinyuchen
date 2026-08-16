@@ -283,7 +283,13 @@ Fixed before the components existed, so the spec and the markup agree on names:
   stepper, `role="group"`, containing `button[data-stage][data-stage-index]` with
   `aria-current="step"` on the active one, plus `[data-step-prev]` /
   `[data-step-next]`.
-- `.beat[data-stage][data-stage-active]` — the prose beats. Always visible.
+- `.beat[data-stage][data-stage-active]` — the prose beats, each wrapping its text
+  in a `.beat__line`. **`display: none` at every width**, and kept in the markup
+  because `spec/` runs in JSDOM and this is the only machine-readable statement
+  that each chapter's prose exists and says what it should. They were visible, in
+  a scrolling desktop rail, until that layout was replaced.
+- `.chapter__active-beat[data-active-beat]` — the paragraph a reader actually
+  sees: the beat for the step they are on, above the figure.
 - `[data-matrix="<name>"]` — a matrix, rendered as a real `<table
   data-table-view>`; `[data-cell="i,j"]` carries `data-value` at six decimals
   alongside the visible rounded text.
@@ -296,9 +302,17 @@ Fixed before the components existed, so the spec and the markup agree on names:
 - `[data-glyph]` — the page's `<nav>`, which is also the attention matrix.
 - `[aria-live="polite"]` — one per chapter, announcing the step.
 
-**The stepper is deliberately not a tablist.** A tablist implies panels that show
-and hide; these beats are always visible because they are what the reader scrolls
-through. Announcing them as tabs would misdescribe the page to a screen reader.
+**The stepper is deliberately not a tablist, and the original reason for that is
+no longer true.** It was "these beats are always visible because they are what the
+reader scrolls through" — and they are hidden at every width now, with the stepper
+switching between mutually exclusive views, which is a fair description of a
+tablist. The conclusion still holds on two other grounds, and they are written down
+here rather than left implied: there are no panels, only one continuous figure
+whose blocks change, with no `aria-controls` relationship for a tablist to
+describe; and `role="group"` is fixed by the interaction contract that `spec/`
+asserts, so changing it is a contract change rather than a styling one. Treat this
+as deliberately deferred, not settled — it is the third justification in this file
+to have quietly outlived its premise.
 
 #### Sensors, and what each can and cannot see
 
@@ -307,7 +321,7 @@ contract — it never executes scripts. **Scope every chapter-specific selector 
 `[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
 and assertions pass for the wrong reason. That happened.
 
-`pnpm test:e2e` (Playwright, 125 tests over 3 projects: 1920×1080, 390×844, and
+`pnpm test:e2e` (Playwright, 173 tests over 3 projects: 1920×1080, 390×844, and
 reduced motion) is what actually verifies interaction, and it is the gate to run
 before shipping. It is outside CI on purpose: it needs a browser download, and a
 flake inside `check` would block the `deploy` job that depends on it.
@@ -346,20 +360,28 @@ stays in an ink token.
 
 ### The figure has to fit the viewport
 
-`.chapter__viz` is inside a `position: sticky` container, and **a sticky element
-taller than the viewport cannot stick** — it scrolls away and the scrollytelling
-premise collapses. This was true on ten of eleven chapters at 390×844 before it was
-measured, up to 2306px in an 844px viewport, and hand-checking never caught it.
+**The stepper sits at the top of the figure card, so a card taller than the screen
+means a reader can click a step and change something they cannot see.** That is the
+reason now. It used to be mechanical — `.chapter__viz` sat inside a
+`position: sticky` container, and a sticky element taller than the viewport cannot
+stick, so the whole premise collapsed — and that framing survived in this file for
+a while after nothing on the page was sticky any more. The original measurement
+still stands: ten of eleven chapters were over at 390×844, up to 2306px in an 844px
+viewport, and hand-checking never caught it.
 
-Two rules follow. Groups of side-by-side figures stay in a row on narrow screens
-and the row scrolls (`.pair`, `.projection`, `.heads`, `.lanes`, `.spine`,
-`.curves`), with children at `flex: 0 0 auto` so the strip owns the overflow rather
-than flex shrinking each matrix and clipping its cells mid-number. And a chapter
-showing a pipeline discloses it a step at a time instead of rendering every stage
-at once.
+Two rules follow, and both are why the numbers below are as good as they are.
+Groups of side-by-side figures stay in a row on narrow screens and the row scrolls
+(`.pair`, `.projection`, `.heads`, `.lanes`, `.spine`, `.curves`), with children at
+`flex: 0 0 auto` so the strip owns the overflow rather than flex shrinking each
+matrix and clipping its cells mid-number. And a chapter showing a pipeline discloses
+it a step at a time instead of rendering every stage at once.
 
-Re-measure after any change to what a beat renders. Current state: desktop 0/11
-over, tallest 961px; phone 4/11 over, worst 1012px, three of those by under 50px.
+Re-measure after any change to what a beat renders, with a throwaway probe spec
+rather than by eye. Current state, measured after the layout change: **desktop 0/11
+over, tallest card 616px in 1080; phone 2/11 over, worst 869px in 844.** The stepper
+lands 509–571px down a 1080px screen on every chapter, so it is never the thing
+below the fold — which is why there is no sticky stepper, and why adding one would
+be solving a problem the page does not have.
 
 ### Scroll performance is fine; do not "fix" it
 
@@ -373,8 +395,101 @@ second timeouts for a dozen frames — the tab is backgrounded and
 headless run with an explicit `deviceScaleFactor`.
 
 What *was* rough was the absence of transitions: stage changes were hard cuts and
-the figure's height jumped. `Reveal` / `RevealFrame` and a `background-color`
-transition on cells handle that.
+the figure's height jumped. The motion layer below handles that.
+
+### The motion layer
+
+`Reveal.tsx` claimed to do this and could not. `AnimatePresence` lived **inside**
+`Reveal`, while every call site mounted `Reveal` conditionally
+(`{stage < 2 ? <Reveal/> : null}`) — so React unmounted the presence container
+along with its child and no `exit` variant ever played, anywhere, once. It was
+also imported by two files out of thirteen. The honest description of the page
+before this work is that its only transition was `RevealFrame`'s height morph and
+ten of eleven chapters swapped their contents in one frame.
+
+`primitives/Stage.tsx` replaces it. The rules that hold it up:
+
+- **The presence container outlives the condition.** `StageBlock` is always
+  mounted and `when` decides whether it has a child. That is the entire fix, and
+  any future primitive that puts `AnimatePresence` inside a conditional has
+  reintroduced the bug.
+- **`useIsPresent`, never `usePresence`.** The latter hands removal to the caller
+  and leaves exiting blocks mounted forever. It presents as a layout bug: chapter
+  3 stacked its first figure under its third and overflowed by 88px.
+- **A leaving block gets `aria-hidden` and `inert`.** For ~120ms it is a
+  duplicate of its own replacement. axe-core found this before a person did — it
+  scanned mid-exit and reported 1423 contrast failures against a two-thirds-faded
+  copy of the matrix underneath it.
+- **`layout` lives on exactly one node per chapter** (`StageFrame`). On the
+  blocks as well, `y` is driven by the variant and the projection at once and the
+  figure bounces. This is also what keeps the measured scroll cost where it is.
+- **Direction comes from the stage delta, never from scroll.** `useStage` commits
+  `{ stage, direction }` as one piece of state through one funnel. A stepper click
+  has no scroll direction but has an unambiguous delta.
+- **No new code registers a `scroll` listener.** A resize fires one via reflow, so
+  anything keyed to `scroll` cannot tell a reader moving from a window changing
+  size — the bug that already cost the reader's chosen step once. The nav script
+  is IntersectionObserver plus `resize`, and it is the last observer on the page.
+- **Observer thresholds have to be dense**, and the observer is only a signal that
+  something moved — the decision measures a live rect. Reading
+  `entry.boundingClientRect` off the callback's own entries is the trap: those
+  rects are sampled when the intersection changed, not when the callback runs, and
+  only changed entries are in the batch. In the deleted stage machine that let an
+  anchor jump latch whichever beat was crossing mid-flight, with nothing ever
+  coming to correct it — chapter 2 opened on beat 2 at 1920 and beat 1 at 1440 from
+  identical markup. The nav script carries both rules now.
+
+**Opacity may be animated, never asserted.** A value below 1 is allowed only as
+the `initial` or `exit` state of a transition that ends at 1 or at unmount.
+Nothing rests below 1; resting de-emphasis is still `filter: saturate()`, and
+`.stepper__arrow:disabled` is still the one WCAG-exempt exception. An e2e test
+asserts every `.reveal` settles at exactly 1, so "fade the inactive legend a bit"
+cannot creep back in.
+
+#### Removed with the two-column layout, kept because the next one will hit them
+
+The stick signal and the view-timeline chapter entry reveal were built, shipped and
+then deleted a session later along with the layout they served. Two Chrome facts
+they cost hours to learn survive them, and would be paid for again by the next
+person who reaches for a scroll-driven animation:
+
+- **The minifier folds `animation-timeline` into the `animation` shorthand.**
+  `animation: chapter-arrive linear both` plus `animation-timeline: view()`
+  became `animation: linear both chapter-arrive view()`, which is not a value the
+  shorthand accepts, so Chrome discarded the whole declaration and
+  `animation-name` computed to `none`. Longhands, and the timeline in an `:is()`
+  rule of its own, give it nothing to merge.
+- **The blanket `prefers-reduced-motion` rule cannot reach a timeline
+  animation.** It sets `animation-duration: 0.01ms`, and a scroll-driven
+  animation has no duration — its progress is scroll position. It has to be
+  switched off by name — the blanket rule cannot save it.
+
+And three from the stick signal, for whenever something on this page is
+`position: sticky` again (nothing is, today):
+
+- Never transform a sticky element. It is clamped to its containing block and a
+  transform is applied afterwards and is not, which is how the figure once escaped
+  its chapter and painted its opaque card over the hero.
+- A stick signal must cost zero layout — `box-shadow` and `border-color`, never
+  padding, border-width or scale — because height is what decides whether an
+  element can stick at all.
+- "At the offset", not "at or above it". A `<=` test on the element's top reports
+  every chapter the reader has already scrolled past as pinned.
+
+**Motion durations live in `global.css` and are mirrored in `src/lib/viz/motion.ts`.**
+CSS is the source: it is the only file allowed to write a literal, and it cannot
+export to TypeScript. `motion.test.ts` parses the stylesheet and fails when the
+two disagree — which they already had, silently, at `0.28` against `--dur: 260ms`.
+
+**One layout at every width, and a test that says so.** There is no chapter
+breakpoint left — `@media (width >= 900px)` survives only for the hero, the
+figure-internal reflow rules (`.pair`, `.formula`, `.lanes`) and the nav's
+current-chapter treatment. `e2e/motion.spec.ts`'s last test is the mechanical
+statement of that, asserting on one chapter in every project that the prose rail is
+still hidden, the body still has one column, nothing is sticky and no entry
+animation runs. It replaced a test that guaranteed the phone had been left alone;
+the risk it guards is the same one, which is the two widths drifting apart a
+`@media` block at a time. Run it first after touching any of this.
 
 Two things that will waste an hour if you don't know them:
 
@@ -486,19 +601,44 @@ rose/teal query-key pair collapses under deuteranopia at ΔE 7.3). Hue carries
 identity, fill carries magnitude, and the two are never conflated. See the header
 comment in `global.css`.
 
-Layout splits at **900px**. Below it the figure is `position: sticky` at the top
-and the prose runs beneath; above it, two columns with the figure sticky at
-`top: var(--space-6)`. **Any ancestor of a matrix needs `min-width: 0`** — a grid or
+**Chapters do not split at 900px any more.** One column at every width: the head,
+one active paragraph, and the figure below it, driven by the stepper.
+
+**The chapter is a centred column whose contents are flush left.** `.chapter` caps
+at 123 `--grid-unit`s — 984px, which is the figure's 936 plus its own padding, so
+the container is exactly as wide as its widest child and holds no rag to explain.
+At 1920 that puts the block at 468–1452 with the head, the thesis, the active
+paragraph and the figure all starting at 492. The 936 is not arbitrary: it is the
+width the figure had as the second column of the old grid, so every figure lays out
+as it always did and the recorded heights carry over. The figure carries no
+`max-width` of its own — that would be the same number written twice, and the two
+would drift.
+
+**Chapters no longer share a left edge with the hero and the nav**, and that is
+deliberate. `.chapter` kept the hero's 180-unit width for a while after going to
+one column, which left ~456px of dead space to the right of every figure and hung
+the whole page off one edge. Two e2e tests hold the replacement: one that every
+element inside a chapter starts on the same pixel, one that the column is centred
+in the viewport. The hero and the nav stay at 180 units and start at 264.
+
+This file said for some time that below 900px the figure was `position: sticky` at
+the top and the prose ran beneath it. Both halves were false: nothing below 900px
+was ever sticky, and `.chapter__prose` has been `display: none` at the base
+throughout. Do not restore either claim.
+
+**Any ancestor of a matrix needs `min-width: 0`** — a grid or
 flex item's default minimum is its content size, so without it the 6×6 score grid
 sized the figure column to 638px inside a 390px viewport and dragged the whole
 document sideways. `overflow-x` on the matrix can only work once its ancestors are
 allowed to be narrower than their contents.
 
-**The nav, the hero and the chapters share one max-width** — 180 `--grid-unit`s,
-with the same `padding-inline` — so the nav's first glyph sits on the title's left
-edge. `.glyph` was capped at 130 for months: two centred boxes of different widths
-never line up, and at 1728 that started the nav 200px right of the title while
-looking entirely deliberate in the source.
+**The nav and the hero share one max-width** — 180 `--grid-unit`s, with the same
+`padding-inline` — so the nav's first glyph sits on the title's left edge. `.glyph`
+was capped at 130 for months: two centred boxes of different widths never line up,
+and at 1728 that started the nav 200px right of the title while looking entirely
+deliberate in the source. That trap is the reason the chapters' own narrower
+container is stated as a decision here rather than left to be rediscovered as a
+defect.
 
 **The hero is two columns and nothing else** — the title, author line, standfirst,
 equation, sentence and note on the left, the three figures on the right, tops
@@ -529,43 +669,43 @@ edge --- while the homepage visibly stopped 352px short of every chapter. First 
 hero's grid tracks fell short inside a correct container; then, once the tracks
 filled, the figure kept its own 320px cap inside a correct track. Both times a
 container-based check passed and the defect a reader sees was untouched. The e2e
-test now measures the figure the reader can see against `.chapter__viz`.
+test measures ink to this day, though it measures a different edge: chapters are
+one column now and have no right ink edge for the hero to agree with, so it checks
+that the nav glyph, the hero title, the chapter head and the chapter figure all
+start on the same left edge.
 
-Three rules about the chapter grid, each of which has already been broken once:
+Two rules about the chapter, both of which have already been broken once:
 
-- **The chapter head sits above the grid, not inside the text column.** It is a
-  sibling of `.chapter__body`, mirroring the hero, so the prose and the figure
-  below it start on the same line. That arrangement broke before — the sticky
-  figure painted its opaque card over the thesis — but the cause was
-  `top: 50%; translate: 0 -50%`: sticky is clamped to its containing block, and a
-  transform is applied afterwards and is not. With a plain `top`, a sticky element
-  can never rise above its static position. The `no figure ever paints over prose`
-  e2e spec covers `.chapter__head` and `.chapter__thesis` explicitly now, which it
-  did not while they were nested.
-- **`.chapter__prose` needs its desktop `gap: 44vh`.** Rewriting that rule and
-  letting it inherit the base 72px puts beat tops 184px apart instead of ~590, the
-  whole chapter collapses to about one screen, and two wheel clicks rip through
-  every stage. It looks like a stage-machine bug and is not.
-- **Assert alignment on the first `.beat`, not on `.chapter__prose`.** `padding-block`
-  is inside the border box, so the container's top does not move when the padding
-  changes. A test written against the container passed while the 216px regression
-  it was meant to catch was live.
+- **The chapter head is a sibling of `.chapter__body`, not a child of it.** That is
+  just document order now, but it was hard-won: the arrangement broke when the
+  figure painted its opaque card over the thesis, and the cause was
+  `top: 50%; translate: 0 -50%` — sticky is clamped to its containing block, and a
+  transform is applied afterwards and is not. The `no figure ever paints over prose`
+  e2e spec covers `.chapter__head` and `.chapter__thesis` explicitly, and it costs
+  nothing to keep now that nothing is sticky.
+- **Assert alignment on the element a reader can see, not on its container.**
+  `padding-block` sits inside the border box, so a container's top does not move
+  when its padding changes — a test written against `.chapter__prose` passed while
+  the 216px regression it was meant to catch was live.
 
-The scroll-driven stage machine (`useScrollStage`) arbitrates two inputs into one
-piece of state, and every obvious approach was wrong.
-`entry.boundingClientRect` was the third: those rects are sampled when the
-intersection changed, not when the callback runs, and only changed entries are in
-the batch — so arriving at a chapter by anchor latched whichever beat happened to
-be crossing mid-jump, and no further change ever came to correct it. Chapter 2
-opened on beat 2 at 1920 and beat 1 at 1440 from identical markup. The observer is
-now only a signal that something moved; the decision measures every beat's live
-rect against a line 45% down the viewport, on each trigger plus once on mount plus
-on resize. Suppressing the observer
-for 700ms after a click raced the smooth scroll and silently reverted the reader's
-choice. Resuming on `scroll` meant a window resize — which fires one via reflow —
-threw the reader's place away, which is the marking notes' own "resizes mid-use"
-case. It now resumes on `wheel`, `touchmove` or a scrolling key, none of which a
-reflow can produce.
+A third rule lived here for as long as the desktop had a prose rail: beat spacing
+was `.beat { min-block-size: var(--chapter-beat-span) }`, 88svh each, and losing it
+collapsed a chapter to one screen. The rail is gone, the token is deleted, and the
+rule is recorded only because this file also spent weeks claiming the mechanism was
+a `gap: 44vh` that `viz.css` had never had. Two retractions on one rule is the sort
+of thing worth leaving visible.
+
+**The stepper does not scroll, and nothing else moves the stage.** `useStage` is
+the whole machine now: state, a clamp, and a direction derived from the stage
+delta. It replaced `useScrollStage`, which arbitrated a scroll observer against the
+stepper and got it wrong in three distinct ways before it got it right — the
+surviving lesson is in the motion-layer section above, and the one rule that
+outlived the code is here. The first version had the stepper call `scrollIntoView`
+on the chosen beat and suppress the observer for 700ms; the smooth scroll routinely
+outlasted the timer, the observer woke mid-flight and silently reverted the reader's
+choice, and the e2e specs saw it as a stepper click that did nothing. There is no
+observer left to race, but a `scrollIntoView` here would still yank the page under
+a reader who only wanted the next step. Don't add one.
 
 `chapters.ts` holds prose as plain strings and there is no markdown step, so
 notation must be written as the characters it should render as (`dₖ`, not `d_k`).

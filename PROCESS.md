@@ -62,7 +62,97 @@ matrices beside it. Built on the four-stage prototype
    [`e7dbfc9`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/e7dbfc9).
    All of it is in CLAUDE.md as rules now.
 
+5. **Two chapter layouts, and then one.** A rendered review of all eleven chapters
+   showed the prose announcing the next idea before the current diagram was
+   finished, and cumulative visual stages as tall as 1017px. The fix put a deep
+   seam through `ChapterFrame`: desktop got a left-hand rail of viewport-length
+   prose beats scrolling past a `position: sticky` figure, driven by an
+   IntersectionObserver; phones got exactly one active paragraph above a stepper.
+   Chapter components were changed to replace, rather than accumulate, matrices as
+   the stage changes — and that part was right and has not moved since.
+
+   The seam was the mistake, and it took building both halves to see it. The phone
+   half was the one that worked: one paragraph, one figure, one control, no
+   arbitration. The desktop half needed a scroll observer, a manual latch to stop
+   the observer fighting the stepper, 88svh of spacing per beat to keep the two
+   from racing, and a documented list of three separate bugs before it behaved.
+   Measured against each other, the elaborate half was not teaching anything the
+   simple half did not.
+
+   So the desktop was rebuilt onto the phone's arrangement and everything that
+   existed only to serve the split was deleted: the observer, the latch, the beat
+   spacing, the stick signal, the entry reveal. `useScrollStage` became `useStage`
+   — 60 lines to 20, and the name stopped lying. The figure is capped at exactly
+   the width it had as a grid column, so every figure lays out as it did.
+
+   The browser suite measures the result: the figure card must fit the viewport,
+   landing on a chapter must put its stepper on screen, one active paragraph must
+   sit above its visual, and one test asserts the layout is *the same* at 390 and
+   1920 — which is the guarantee the two-column version could never make
+   [`b8cb51d`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/b8cb51d).
+
+6. **A motion layer that was never running.** The desktop chapters were meant to
+   have enter and exit transitions and did not, and the cause was structural
+   rather than a wrong duration: `AnimatePresence` sat inside `Reveal` while
+   every call site mounted `Reveal` conditionally, so React unmounted the
+   presence container along with its child and no `exit` variant had ever played.
+   The primitive was also imported by two files out of thirteen. Replacing it
+   with `primitives/Stage.tsx` — condition inside the container, direction
+   derived from the stage delta, `aria-hidden` on the departing copy — turned
+   eleven hard-cutting chapters into eleven that move, and added a stick-state
+   signal, a nav that marks where the reader is, and a view-timeline entry
+   reveal. The phone was left byte-identical on purpose and there was a test that
+   said so.
+
+   Two of those four additions — the stick signal and the entry reveal — were
+   deleted one session later, when the layout they served was (item 5). That is
+   worth stating rather than tidying away: they were built to a stated design,
+   measured, and removed with it. The `Stage.tsx` work and the nav survive
+   unchanged, and the Chrome traps the entry reveal cost are recorded in CLAUDE.md
+   under a heading that says why they outlived their code.
+
+   Four defects surfaced only because each new check was deliberately falsified
+   before it was trusted, and every one of them looked like something else:
+
+   - `usePresence` instead of `useIsPresent` left exiting blocks mounted forever.
+     It presented as chapter 3 overflowing the viewport by 88px.
+   - The CSS minifier folded `animation-timeline: view()` into the `animation`
+     shorthand, producing a declaration Chrome discards. The source was right,
+     the keyframes shipped, and `animation-name` computed to `none`.
+   - `IntersectionObserver` with five thresholds never fires inside a chapter
+     four viewports tall, so the nav silently stopped keeping up.
+   - A view-timeline animation on the sticky figure made the "every stage fits in
+     the viewport" spec fail on a different chapter each run — the same "never
+     transform the sticky element" rule this repo had already learned twice.
+
+   The first two of those were found by mutations that were *supposed* to make a
+   test go red and did not. Six of the twelve mutations came back green on the
+   first sweep; four were weak tests and two were live bugs [`b8cb51d`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/b8cb51d).
+
 ## Before you ship
 
-`pnpm check` runs typecheck, build, lint and 87 tests; `pnpm check:evidence` checks
-these citations. `pnpm test:e2e` is a local gate of 125, axe-core included.
+`pnpm check` runs typecheck, build, lint and 115 tests; `pnpm check:evidence` checks
+these citations. `pnpm test:e2e` is a local gate of 173, axe-core included.
+
+### The motion checks, and the mutation that makes each one fail
+
+A check nobody has seen fail is not evidence. Each was applied, observed red, and
+reverted. Three rows were removed when the checks they describe were deleted along
+with the stick signal and the entry reveal; the rest still hold.
+
+| Check | Mutation | Result |
+| --- | --- | --- |
+| a block arrives from the side the reader is travelling from | flip `dir * SHIFT` in `BLOCK.enter` | red |
+| nothing is left resting at reduced opacity | `BLOCK.active` → `opacity: 0.6` | red |
+| the outgoing block actually leaves | `AnimatePresence` back inside the condition | red |
+| a leaving block is hidden from assistive technology | drop `aria-hidden` from `PresenceBlock` | red |
+| nothing is left mounted once a transition is over | `useIsPresent` → `usePresence` | build refused it |
+| the nav marks the right chapter | the script's `LINE` → 1.5 | red |
+| the nav says where it is to assistive tech | drop the `aria-current` branch | red |
+| reduced motion reaches the end state | remove the `animated` early return | red |
+| the chapter layout is the same at every width | put `.chapter__prose { display: flex }` back in a `@media (width >= 900px)` block | red |
+| the figure card fits inside the viewport | `padding-block: 50vh` on `.chapter__viz` | red |
+| landing on a chapter puts its stepper on screen | `padding-block: 95vh` on `.chapter` | red |
+| everything inside a chapter starts on one left edge | `margin-inline: auto` on `.chapter__figure` | red |
+| the chapter column is centred in the viewport | `margin-inline: 0` on `.chapter` | red |
+| one active paragraph, above its visual | `display: none` on `.chapter__active-beat` | red |
