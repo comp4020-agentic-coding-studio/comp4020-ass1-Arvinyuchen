@@ -15,10 +15,10 @@ had used that page by hand a dozen times and never once resized it.
 **What this changed about the developer I want to be** is that I distrust green,
 and I have stopped defending work because I built it. Writing a check now
 includes breaking the thing it watches to confirm it notices: on one sweep of
-twelve deliberate mutations, six tests stayed green — four were weak tests, two
-were live bugs I would otherwise have shipped. The harder version came at the
-end. I had built a two-column scrollytelling layout with a scroll observer, a
-latch, and three fixed races. Beside the phone's one paragraph and a stepper, it
-taught nothing extra, so I deleted it and two features I had shipped the day
-before. The history says so rather than tidying it away. I would rather show a
-design being tested and losing than only ever show the answer.
+twelve deliberate mutations, six stayed green — four weak tests, two live bugs I
+would otherwise have shipped. The harder version came at the end. I had built a
+two-column scrollytelling layout with a scroll observer, a latch and three fixed
+races; beside the phone's one paragraph and a stepper it taught nothing extra, so
+I deleted it, and two features I had shipped the day before. The history says so
+rather than tidying it away. I would rather show a design being tested and losing
+than only ever show the answer.

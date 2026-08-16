@@ -519,6 +519,31 @@ And a rule earned the hard way: **confirm a check can fail before trusting it.**
 `linkinator` prints "scanned 1 links" with 25 anchors on the page and looks inert;
 it was verified by pointing an anchor at a missing id and watching it exit 1.
 
+Every check below was applied its mutation, observed red, and reverted. Keep this
+table current: the first sweep found **six of twelve mutations left the test
+green** — four were weak tests, and two were live bugs (`usePresence` leaving
+exiting blocks mounted forever, and the minifier folding `animation-timeline`
+into the `animation` shorthand so Chrome discarded the whole declaration). A
+check nobody has watched fail is not evidence, and this is where that is proved
+rather than asserted.
+
+| Check | Mutation | Result |
+| --- | --- | --- |
+| a block arrives from the side the reader is travelling from | flip `dir * SHIFT` in `BLOCK.enter` | red |
+| nothing is left resting at reduced opacity | `BLOCK.active` → `opacity: 0.6` | red |
+| the outgoing block actually leaves | `AnimatePresence` back inside the condition | red |
+| a leaving block is hidden from assistive technology | drop `aria-hidden` from `PresenceBlock` | red |
+| nothing is left mounted once a transition is over | `useIsPresent` → `usePresence` | build refused it |
+| the nav marks the right chapter | the script's `LINE` → 1.5 | red |
+| the nav says where it is to assistive tech | drop the `aria-current` branch | red |
+| reduced motion reaches the end state | remove the `animated` early return | red |
+| the chapter layout is the same at every width | `.chapter__prose { display: flex }` back in a `@media (width >= 900px)` block | red |
+| the figure card fits inside the viewport | `padding-block: 50vh` on `.chapter__viz` | red |
+| landing on a chapter puts its stepper on screen | `padding-block: 95vh` on `.chapter` | red |
+| everything inside a chapter starts on one left edge | `margin-inline: auto` on `.chapter__figure` | red |
+| the chapter column is centred in the viewport | `margin-inline: 0` on `.chapter` | red |
+| one active paragraph, above its visual | `display: none` on `.chapter__active-beat` | red |
+
 #### Notation, and whose diagram is whose
 
 **Every equation is KaTeX, rendered at build time.** TeX sources live in
