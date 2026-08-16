@@ -156,7 +156,7 @@ as a separate module chunk plus a renderer entrypoint however high the limit goe
 --- inlining cannot apply to a graph that imports across chunks. So
 `linkinator.config.json` skips `_astro/`, which linkinator auto-discovers, and
 which `comp4020-crit2-Arvinyuchen` already precedents against a byte-identical
-workflow step. That file also turns `checkFragments` on, so the eleven chapter
+workflow step. That file also turns `checkFragments` on, so the ten chapter
 anchors are genuinely validated, and skips external links --- linkinator was
 previously following the page's arxiv and github URLs, so an upstream 404 could
 fail a perfectly good build.
@@ -199,7 +199,7 @@ Continuous ramps without breaking the literal rule: a component sets a numeric
 including the heatmaps.
 
 `src/layouts/Base.astro` owns the document shell; `src/pages/index.astro` is the
-hero, the glyph nav and eleven islands.
+hero, the glyph nav and ten islands.
 
 Layout is described in the week-specific section below, along with the
 `min-width: 0` rule that any ancestor of a matrix needs.
@@ -244,11 +244,21 @@ know whose repo it is. Spend the effort on the work.
 
 ### This week: an interactive explainer of "Attention Is All You Need"
 
-One page, eleven chapters, one stateful visualisation each, over a single six-token
+One page, ten chapters, one stateful visualisation each, over a single six-token
 sentence defined once in `src/lib/transformer/constants.ts`:
 `the cat chased the small mouse`. `the` appears twice on purpose — two identical
 embedding rows are the only honest motivation for positional encoding, and chapter
 3 is about pulling them apart.
+
+**There was an eleventh, "Past the paper", and it was removed on request.** It
+covered what later practice changed — decoder-only stacks, RoPE, RMSNorm — and it
+was the only part of the page making claims the paper does not support, which is
+why it carried a `[data-beyond-flag]` and a spec test asserting it said so out
+loud. That test went with it. The page now stops where the paper does, which is a
+cleaner scope claim, but it means **nothing here is about modern LLMs and nothing
+should quietly become so**: any future chapter that reaches past 2017 owes the
+reader the same flag and the same hedging, and owes this file a note saying it is
+back.
 
 `d_model` is 4 with two heads of `d_k = 2`. Not smaller: at `d_model = 2` a
 two-head split gives `d_k = 1`, a "dot product" of two 1-vectors is just
@@ -277,7 +287,7 @@ numbers.
 
 Fixed before the components existed, so the spec and the markup agree on names:
 
-- `[data-chapter="01".."11"]` — chapter section, anchored at its slug.
+- `[data-chapter="01".."10"]` — chapter section, anchored at its slug.
 - `[data-viz="<slug>"]` — the island root.
 - `[data-stepper="<id>"]` with `data-testid="interaction-trigger"` — the beat
   stepper, `role="group"`, containing `button[data-stage][data-stage-index]` with
@@ -298,7 +308,7 @@ Fixed before the components existed, so the spec and the markup agree on names:
 - `[data-slot="softmax|qk|scale|v"]` — the equation's addressable terms.
 - Controls: `[data-query-select]`, `[data-row-select]`, `[data-scale-toggle]`,
   `[data-pe-toggle]`, `[data-residual-toggle]`, `[data-norm-toggle]`,
-  `[data-generation-step]`, `[data-temperature]`, `[data-change-toggle]`.
+  `[data-generation-step]`, `[data-temperature]`.
 - `[data-glyph]` — the page's `<nav>`, which is also the attention matrix.
 - `[aria-live="polite"]` — one per chapter, announcing the step.
 
@@ -318,10 +328,10 @@ to have quietly outlived its premise.
 
 `spec/assignment-1.test.ts` (JSDOM, against `dist/`) can only assert the markup
 contract — it never executes scripts. **Scope every chapter-specific selector to
-`[data-chapter]`:** unscoped, `.beat` matches 46 elements across eleven chapters
+`[data-chapter]`:** unscoped, `.beat` matches every beat across every chapter
 and assertions pass for the wrong reason. That happened.
 
-`pnpm test:e2e` (Playwright, 173 tests over 3 projects: 1920×1080, 390×844, and
+`pnpm test:e2e` (Playwright, 167 tests over 3 projects: 1920×1080, 390×844, and
 reduced motion) is what actually verifies interaction, and it is the gate to run
 before shipping. It is outside CI on purpose: it needs a browser download, and a
 flake inside `check` would block the `deploy` job that depends on it.
@@ -377,8 +387,9 @@ matrix and clipping its cells mid-number. And a chapter showing a pipeline discl
 it a step at a time instead of rendering every stage at once.
 
 Re-measure after any change to what a beat renders, with a throwaway probe spec
-rather than by eye. Current state, measured after the layout change: **desktop 0/11
-over, tallest card 616px in 1080; phone 2/11 over, worst 869px in 844.** The stepper
+rather than by eye. Current state: **desktop 0 of 10 chapters over, tallest card
+617px in 1080; phone 1 of 10 over — chapter 10 at 869px in 844, on two of its four
+stages.** The stepper
 lands 509–571px down a 1080px screen on every chapter, so it is never the thing
 below the fold — which is why there is no sticky stepper, and why adding one would
 be solving a problem the page does not have.

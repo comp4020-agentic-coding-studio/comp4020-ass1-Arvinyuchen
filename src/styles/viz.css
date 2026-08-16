@@ -1345,105 +1345,6 @@ tr[data-dimmed="true"] {
   text-align: end;
 }
 
-/* ---------------------------------------------------------------- ch 11 diff */
-
-.beyond__flag {
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  border-inline-start: var(--space-1) solid var(--role-value);
-  border-radius: var(--radius-sm);
-  background-color: var(--surface-sunken);
-  color: var(--ink-2);
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.modern-shift {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  margin-block-start: var(--space-4);
-  gap: var(--space-3);
-}
-
-.modern-shift > div {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  padding: var(--space-3);
-  border: var(--hairline) solid var(--rule-strong);
-  border-radius: var(--radius-md);
-  background-color: var(--surface-raised);
-  gap: var(--space-1);
-}
-
-.modern-shift > div > span:last-child {
-  color: var(--ink-2);
-  font-size: var(--text-xs);
-}
-
-.modern-shift__date {
-  color: var(--ink-3);
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-}
-
-.modern-shift__arrow {
-  color: var(--ink-3);
-  font-size: var(--text-lg);
-}
-
-@media (width >= 900px) {
-  .lanes[data-compare="true"] {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.diff {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  margin-block-start: var(--space-3);
-  padding: 0;
-  gap: var(--space-2);
-  list-style: none;
-}
-
-.diff__toggle {
-  width: 100%;
-  text-align: start;
-}
-
-.diff__why {
-  margin: 0;
-  margin-block-start: var(--space-1);
-  padding-inline-start: var(--space-3);
-  color: var(--ink-2);
-  font-size: var(--text-xs);
-}
-
-.survives {
-  margin-block-start: var(--space-5);
-  padding-block-start: var(--space-3);
-  border-block-start: var(--hairline) solid var(--rule);
-}
-
-.survives__title {
-  margin: 0;
-  font-size: var(--text-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.survives ul {
-  margin-block: var(--space-2) 0;
-  padding-inline-start: var(--space-4);
-  color: var(--ink-2);
-  font-size: var(--text-sm);
-}
-
 /* ---------------------------------------------------------------- ch 6 table */
 
 .softmax-steps {
@@ -1629,14 +1530,5 @@ tr[data-dimmed="true"] {
 
   .curve {
     width: 78%;
-  }
-
-  .modern-shift {
-    grid-template-columns: 1fr;
-  }
-
-  .modern-shift__arrow {
-    justify-self: center;
-    rotate: 90deg;
   }
 }

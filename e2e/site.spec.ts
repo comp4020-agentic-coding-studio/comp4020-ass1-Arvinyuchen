@@ -14,7 +14,6 @@ const CHAPTERS = [
   "residual-norm-ffn",
   "masked-attention",
   "encoder-decoder",
-  "modern-llms",
 ] as const;
 
 async function values(page: Page, selector: string): Promise<number[]> {
@@ -170,20 +169,6 @@ test("chapter 8's residual ablation changes the numbers downstream", async ({ pa
   const after = await out();
 
   expect(after).not.toEqual(before);
-});
-
-test("chapter 11 toggles reveal a reason, and stay hedged", async ({ page }) => {
-  await page.goto("./#modern-llms");
-  const ch = '[data-chapter="11"]';
-  await setBeat(page, "11", 1);
-
-  const toggle = page.locator(`${ch} [data-change-toggle="rope"]`);
-  await expect(page.locator(`${ch} [data-why="rope"]`)).toHaveCount(0);
-  await toggle.click();
-  await expect(page.locator(`${ch} [data-why="rope"]`)).toBeVisible();
-  await expect(page.locator(`${ch} [data-hedge]`)).toContainText(
-    "widespread directions rather than a specification",
-  );
 });
 
 test("chapter 10's blocks link back to the chapter that explained them", async ({ page }) => {

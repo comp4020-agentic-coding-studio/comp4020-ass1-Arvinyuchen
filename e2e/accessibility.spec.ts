@@ -24,7 +24,6 @@ const CHAPTERS = [
   "08",
   "09",
   "10",
-  "11",
 ] as const;
 
 /** WCAG 2.1 A and AA, which is what the rules are conventionally held to. */

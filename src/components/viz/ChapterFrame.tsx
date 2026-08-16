@@ -130,8 +130,8 @@ export function ChapterFrame({ chapter, children, vizLabel }: ChapterFrameProps)
         {/* Server-rendered at every width and `display: none` at every width.
             Not dead markup: `spec/assignment-1.test.ts` asserts against it
             heavily — beat counts per chapter, more than 40 characters of prose
-            in each, no backticks or `d_k`, chapter 5's beat ids, chapter 11's
-            hedging, and a `.beat__line` inside every one of them. It runs in
+            in each, no backticks or `d_k`, chapter 5's beat ids, and a
+            `.beat__line` inside every one of them. It runs in
             JSDOM against `dist/` without executing a script, so the markup is
             all it can see, and deleting these paragraphs would delete the only
             machine-readable statement that each chapter's prose exists and says

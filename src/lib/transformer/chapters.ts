@@ -20,7 +20,7 @@ export interface Beat {
 }
 
 export interface Chapter {
-  /** Zero-padded, so `[data-chapter]` sorts lexically: "01".."11". */
+  /** Zero-padded, so `[data-chapter]` sorts lexically: "01".."10". */
   id: string;
   number: number;
   /** URL fragment. Kept separate from `id` so the anchor reads as prose. */
@@ -305,29 +305,6 @@ export const CHAPTERS: readonly Chapter[] = [
       {
         id: "shapes",
         body: "Every block is labelled with the shape actually flowing through it, derived from this page's constants rather than written on by hand. Nothing changes width: the residual stream is four wide from the embedding to the output, and that is what makes stacking possible. Click a block to jump back to the chapter that explained it.",
-      },
-    ],
-  },
-  {
-    id: "11",
-    number: 11,
-    slug: "modern-llms",
-    title: "Past the paper",
-    thesis:
-      "The models people use today kept scaled dot-product attention and deleted half the diagram. Here is what changed, and what did not.",
-    status: "ready",
-    beats: [
-      {
-        id: "decoder-only",
-        body: "The biggest change is a deletion. Most of the well-known language models today keep only the right-hand column, with the cross-attention sublayer removed: a stack of masked self-attention and feed-forward layers, and no encoder at all. Translation stops being an architecture and becomes something you ask for in the prompt.",
-      },
-      {
-        id: "changes",
-        body: "Several other pieces have commonly been replaced since 2017. Toggle each one to see where it sits and what it displaced. These are widespread choices rather than universal ones — which of them a particular model uses is a question about that model, and worth checking rather than assuming.",
-      },
-      {
-        id: "unchanged",
-        body: "What survived is the part this page spent nine chapters on. Scaled dot-product attention is unchanged. Multiple heads, unchanged. Residual connections around every sublayer, a normalisation step, a position-wise feed-forward network, causal masking: all still there. The 2017 equation is still the equation.",
       },
     ],
   },

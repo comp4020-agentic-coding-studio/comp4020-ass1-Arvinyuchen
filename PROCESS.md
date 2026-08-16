@@ -129,10 +129,26 @@ matrices beside it. Built on the four-stage prototype
    test go red and did not. Six of the twelve mutations came back green on the
    first sweep; four were weak tests and two were live bugs [`b8cb51d`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-Arvinyuchen/commit/b8cb51d).
 
+7. **Removing a chapter.** "Past the paper" — decoder-only stacks, RoPE, RMSNorm,
+   and what survived — came out of the page. It was the only section making claims
+   the 2017 paper does not support, so it had carried a visible "beyond the paper"
+   flag and a spec test asserting the flag was there; both went with it. The page
+   now ends where the paper ends.
+
+   The removal is small evidence of something the harness got right: the chapter
+   was one component, one entry in `chapters.ts`, one island, one contiguous CSS
+   block and a handful of named tests, and taking it out touched nothing else. The
+   nav, the beat counts and the anchor list all derive from `CHAPTERS`, so they
+   followed on their own. What did not follow automatically was the prose in
+   `CLAUDE.md` — nine present-tense claims about "eleven chapters" and one
+   interaction-contract entry for a control that no longer exists — which is the
+   same stale-comment failure mode this file keeps recording, and the reason the
+   figure-height numbers were re-measured rather than adjusted by arithmetic.
+
 ## Before you ship
 
-`pnpm check` runs typecheck, build, lint and 115 tests; `pnpm check:evidence` checks
-these citations. `pnpm test:e2e` is a local gate of 173, axe-core included.
+`pnpm check` runs typecheck, build, lint and 113 tests; `pnpm check:evidence` checks
+these citations. `pnpm test:e2e` is a local gate of 167, axe-core included.
 
 ### The motion checks, and the mutation that makes each one fail
 

@@ -29,7 +29,6 @@ const CHAPTER_IDS = [
   "08",
   "09",
   "10",
-  "11",
 ] as const;
 
 const TOKENS = ["the", "cat", "chased", "the", "small", "mouse"] as const;
@@ -47,7 +46,6 @@ const SLUGS: Record<string, string> = {
   "08": "residual-norm-ffn",
   "09": "masked-attention",
   "10": "encoder-decoder",
-  "11": "modern-llms",
 };
 
 /** Chapters whose visualisation is built. A chapter not in here renders as an
@@ -70,7 +68,6 @@ const BEATS_PER_CHAPTER: Record<string, number> = {
   "08": 4,
   "09": 4,
   "10": 4,
-  "11": 3,
 };
 
 function loadBuiltPage(): Document {
@@ -223,27 +220,6 @@ describe("every chapter", () => {
       .join(" ");
     expect(prose).not.toMatch(/`/);
     expect(prose).not.toMatch(/d_k|d_model/);
-  });
-});
-
-describe("chapter 11 is separated from the paper", () => {
-  it("flags itself as later practice", () => {
-    const doc = loadBuiltPage();
-    const chapter = doc.querySelector('[data-chapter="11"]')!;
-    const flag = chapter.querySelector("[data-beyond-flag]");
-    expect(flag, "chapter 11 must say out loud that it is past the paper").not.toBeNull();
-    expect(flag!.textContent!.toLowerCase()).toContain("beyond the paper");
-  });
-
-  it("hedges its claims rather than naming what a given model does", () => {
-    // Asserted against the beat prose, which is server-rendered, rather than
-    // against the interactive note — that one only appears past the first beat,
-    // so it would let an unhedged initial state through.
-    const doc = loadBuiltPage();
-    const chapter = doc.querySelector('[data-chapter="11"]')!;
-    const text = chapter.textContent ?? "";
-    expect(text).toMatch(/widespread choices rather than universal ones/);
-    expect(text).toMatch(/worth checking rather than assuming/);
   });
 });
 
