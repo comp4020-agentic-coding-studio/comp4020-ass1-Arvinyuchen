@@ -5,6 +5,7 @@ import { runForward, runLayerVariant } from "../../lib/transformer/forward.js";
 import { fmt } from "../../lib/transformer/format.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 8. The ablations come from `runLayerVariant` in forward.ts rather than
 // being recomputed here, so switching the residual off changes the same numbers
@@ -32,22 +33,20 @@ export default function Ch08ResidualNormFfn() {
         <>
           {/* The spine shows a window on the pipeline, not all of it. Rendering
               every stage at once made this figure 2082px tall in a 1080px
-              viewport, which defeats the sticky figure it lives in — and the
-              chapter is about disclosure anyway, so earlier stages drop away as
-              the reader moves past them. */}
+              viewport, which puts the stepper that drives it off the top of the
+              screen — and the chapter is about disclosure anyway, so earlier
+              stages drop away as the reader moves past them. */}
           <div className="spine" data-spine>
-            {stage === 0 ? (
+            <StageBlock id="spine-in" when={stage === 0}>
               <>
                 <Matrix
                   name="x"
-                  rows={pass.x}
-                  label="X — into the layer"
-                  rowLabels={tokens}
+                  rows={[pass.x[row]!]}
+                  label="Selected token into the layer"
+                  rowLabels={[tokens[row]!]}
                   colLabels={dims}
                   scale="diverging"
                   role="neutral"
-                  selectedRow={row}
-                  onRow={setRow}
                 />
 
                 <p className="spine__op num" aria-hidden="true">
@@ -56,64 +55,66 @@ export default function Ch08ResidualNormFfn() {
 
                 <Matrix
                   name="residual-1"
-                  rows={variant.afterAttention}
-                  label={residual ? "X + attention(X)" : "attention(X), input discarded"}
-                  rowLabels={tokens}
+                  rows={[variant.afterAttention[row]!]}
+                  label={residual ? "The same token after X + attention(X)" : "Attention(X), input discarded"}
+                  rowLabels={[tokens[row]!]}
                   colLabels={dims}
                   scale="diverging"
                   role="neutral"
-                  selectedRow={row}
                 />
               </>
-            ) : null}
+            </StageBlock>
 
-            {stage === 1 && variant.norm1 ? (
+            {/* `normRow`, not `variant.norm1[row]`. A `StageBlock`'s children are
+                an ordinary JSX expression, so they are built even when `when` is
+                false — nothing mounts, but the props are still evaluated, and
+                indexing a null `norm1` here threw the moment normalisation was
+                switched off. This is the one thing the conditional-mount form
+                gave for free. */}
+            <StageBlock id="spine-norm" when={stage === 1 && normRow !== undefined}>
               <>
                 <p className="spine__op num" aria-hidden="true">
                   LayerNorm
                 </p>
                 <Matrix
                   name="norm-1"
-                  rows={variant.norm1.map((r) => r.out)}
-                  label="Normalised — every row mean 0, variance 1"
-                  rowLabels={tokens}
+                  rows={normRow ? [normRow.out] : []}
+                  label="Selected row normalised to mean 0, variance 1"
+                  rowLabels={[tokens[row]!]}
                   colLabels={dims}
                   scale="diverging"
                   role="neutral"
-                  selectedRow={row}
                 />
               </>
-            ) : null}
+            </StageBlock>
 
-            {stage === 2 ? (
+            <StageBlock id="spine-ffn" when={stage === 2}>
               <>
                 <p className="spine__op num" aria-hidden="true">
                   4 → {D_FF} → ReLU → 4
                 </p>
                 <Matrix
                   name="ffn-hidden"
-                  rows={variant.ffnHidden}
-                  label={`Hidden layer after ReLU — negatives clipped to zero`}
-                  rowLabels={tokens}
+                  rows={[variant.ffnHidden[row]!]}
+                  label="Selected row after ReLU — negatives clipped to zero"
+                  rowLabels={[tokens[row]!]}
                   colLabels={ffLabels}
                   scale="diverging"
                   role="neutral"
-                  selectedRow={row}
                 />
                 <Matrix
                   name="ffn-out"
-                  rows={variant.ffnOut}
+                  rows={[variant.ffnOut[row]!]}
                   label="Back down to the stream's width"
-                  rowLabels={tokens}
+                  rowLabels={[tokens[row]!]}
                   colLabels={dims}
                   scale="diverging"
                   role="neutral"
-                  selectedRow={row}
                 />
               </>
-            ) : null}
+            </StageBlock>
 
-            {stage >= 3 ? (
+            <StageBlock id="spine-out" when={stage >= 3}>
               <>
                 <p className="spine__op num" aria-hidden="true">
                   {residual ? "+ residual, " : ""}
@@ -130,27 +131,30 @@ export default function Ch08ResidualNormFfn() {
                   selectedRow={row}
                 />
               </>
-            ) : null}
+            </StageBlock>
           </div>
 
-          {stage >= 1 ? (
+          <StageBlock id="readout" when={stage === 1 || stage === 2} order={1}>
             <div className="working" data-norm-readout>
-              <p className="working__head">
-                Row {row} — “{tokens[row]}”, measured from the row above
-              </p>
-              {normRow ? (
-                <p className="working__line num">
-                  mean <strong data-norm-mean>{fmt(normRow.mean, 4)}</strong>
-                  <span className="working__op"> · </span>
-                  variance <strong data-norm-variance>{fmt(normRow.variance, 4)}</strong>
-                  <span className="working__op"> → normalised to mean 0, variance 1</span>
-                </p>
+              {stage === 1 ? (
+                <>
+                  <p className="working__head">
+                    Row {row} — “{tokens[row]}”, measured from the row above
+                  </p>
+                  {normRow ? (
+                    <p className="working__line num">
+                      mean <strong data-norm-mean>{fmt(normRow.mean, 4)}</strong>
+                      <span className="working__op"> · </span>
+                      variance <strong data-norm-variance>{fmt(normRow.variance, 4)}</strong>
+                      <span className="working__op"> → normalised to mean 0, variance 1</span>
+                    </p>
+                  ) : (
+                    <p className="working__line working__note">
+                      Normalisation is switched off, so nothing rescales this row.
+                    </p>
+                  )}
+                </>
               ) : (
-                <p className="working__line working__note">
-                  Normalisation is switched off, so nothing rescales this row.
-                </p>
-              )}
-              {stage >= 2 ? (
                 <p className="working__line num" data-clipped-count>
                   <span className="working__op">ReLU clipped </span>
                   <strong>{clipped}</strong>
@@ -159,9 +163,9 @@ export default function Ch08ResidualNormFfn() {
                     of {D_FF} hidden units on this row to exactly zero
                   </span>
                 </p>
-              ) : null}
+              )}
             </div>
-          ) : null}
+          </StageBlock>
 
           <div className="controls">
             <div className="control">

@@ -155,10 +155,28 @@
   --radius-md: 4px;
   --radius-lg: 8px;
   --shadow-figure: 0 1px 2px rgb(18 24 31 / 5%), 0 12px 32px -16px rgb(18 24 31 / 18%);
+
+  /* Motion. These are mirrored as numbers in `src/lib/viz/motion.ts`, because
+   * Motion needs seconds and a cubic-bezier array and CSS cannot export to
+   * TypeScript. The dependency runs this way — CSS is the source, TS is the
+   * mirror — since this file is the only one allowed to write a literal at all.
+   * `motion.test.ts` parses this block and fails if the two disagree, so the
+   * `0.28` that used to sit in `Reveal.tsx` against a `--dur` of 260ms cannot
+   * happen again quietly. */
   --dur-fast: 120ms;
   --dur: 260ms;
+  --dur-layout: 320ms;
   --dur-slow: 520ms;
+  --dur-stagger: 60ms;
   --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+
+  /* Arrivals decelerate into place, departures accelerate out. A leaving block
+   * has nothing to land on, so easing it like an arrival reads as hesitation. */
+  --ease-exit: cubic-bezier(0.4, 0, 0.9, 0.6);
+
+  /* How far something travels on its way in or out. Small on purpose: this is a
+   * change of state in a diagram, not a page transition. */
+  --motion-shift: 8px;
 }
 
 /*

@@ -74,3 +74,81 @@ const tokens = [...TOKENS];
     }
   </ol>
 </nav>
+
+<script>
+  // The nav marks the chapter the reader is in.
+  //
+  // It observes the `[data-chapter]` sections directly rather than listening to
+  // the chapter islands, because every chapter is `client:visible`: an island
+  // below the fold has not hydrated and has nothing to say yet, while its
+  // section is in the server-rendered HTML either way.
+  //
+  // An inline script rather than an island. This owns no state a reader can
+  // change and renders no markup, so shipping a framework runtime for it would
+  // be the wrong trade; `assetsInlineLimit` is already set high enough that a
+  // few lines here add no request and cannot break the links check.
+  //
+  // This is now the last IntersectionObserver on the page — the scroll-driven
+  // stage machine it inherited its discipline from has been deleted along with
+  // the two-column chapter layout — so the two rules it followed live here:
+  //
+  // The observer is only a signal that something moved; the decision measures
+  // live rects. Reading `entry.boundingClientRect` off the callback's entries
+  // is the trap: those rects are sampled when the intersection changed, not
+  // when the callback runs, and only changed entries are in the batch. In the
+  // stage machine that let an anchor jump latch whichever beat happened to be
+  // crossing mid-flight, with no further change ever coming to correct it —
+  // chapter 2 opened on beat 2 at 1920 and beat 1 at 1440 from identical markup.
+  //
+  // And no `scroll` listener, only `resize`. A resize fires a scroll event via
+  // reflow, so anything keyed to `scroll` cannot tell a reader moving from a
+  // window changing size.
+  //
+  // The 0.45 line is the same one the stage machine used. It has no second
+  // consumer left, but it is a reasonable answer to "which chapter am I in":
+  // a little above centre, so a chapter counts as current once its head is
+  // properly on screen.
+  const LINE = 0.45;
+  const sections = [...document.querySelectorAll("[data-chapter]")];
+  const links = new Map(
+    [...document.querySelectorAll("[data-chapter-link]")].map((el) => [
+      el.getAttribute("data-chapter-link"),
+      el,
+    ]),
+  );
+
+  const mark = () => {
+    const line = window.innerHeight * LINE;
+    let current: string | null = null;
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top <= line) {
+        current = section.getAttribute("data-chapter");
+      }
+    }
+
+    for (const [id, el] of links) {
+      if (id === current) {
+        el.setAttribute("data-current", "true");
+        // `location`, not `page` or `step`: this marks one item inside a set of
+        // navigation links, which is what the token is for.
+        if (el.tagName === "A") el.setAttribute("aria-current", "location");
+      } else {
+        el.removeAttribute("data-current");
+        el.removeAttribute("aria-current");
+      }
+    }
+  };
+
+  // A dense band of thresholds rather than quarter-steps. Quarter-steps of a
+  // section's own height are hundreds of pixels apart, and were thousands while
+  // chapters were four viewports tall: scrolling from one chapter into the next
+  // fired no callback at all and the nav stopped keeping up. Chapters are about
+  // a screen each now, so this is generous rather than load-bearing — keep it
+  // anyway, it costs nothing and the observer only has to fire often enough.
+  const observer = new IntersectionObserver(mark, {
+    threshold: Array.from({ length: 21 }, (_, i) => i / 20),
+  });
+  for (const section of sections) observer.observe(section);
+  window.addEventListener("resize", mark);
+  mark();
+</script>

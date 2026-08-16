@@ -2,6 +2,7 @@ import { chapterById } from "../../lib/transformer/chapters.js";
 import { D_FF, D_MODEL, N_HEADS, N_LAYERS, SEQ_LEN } from "../../lib/transformer/constants.js";
 import { fmtShape } from "../../lib/transformer/format.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 10. The paper's figure 1, redrawn rather than traced: boxed sublayers,
 // a stacked ×N bracket and two columns are figure 1's diagrammatic grammar, but
@@ -89,6 +90,9 @@ function Column({
               data-kind={block.kind}
               href={`#${block.slug}`}
             >
+              <span className="block__index num" aria-hidden="true">
+                {String(i + 1).padStart(2, "0")}
+              </span>
               <span className="block__label">{block.label}</span>
               <span className="block__shape num" data-shape>
                 {block.shape}
@@ -110,25 +114,14 @@ export default function Ch10EncoderDecoder() {
   return (
     <ChapterFrame chapter={CHAPTER} vizLabel="The encoder–decoder architecture">
       {(stage) => (
-        <div className="architecture" data-architecture>
-          <Column title="Encoder" blocks={ENCODER} side="encoder" lit={stage !== 1} />
-          <Column title="Decoder" blocks={DECODER} side="decoder" lit={stage !== 0} />
+        <div className="architecture" data-architecture data-architecture-stage={stage}>
+          <StageBlock id="encoder" when={stage !== 1}>
+            <Column title="Encoder" blocks={ENCODER} side="encoder" lit />
+          </StageBlock>
+          <StageBlock id="decoder" when={stage !== 0}>
+            <Column title="Decoder" blocks={DECODER} side="decoder" lit />
+          </StageBlock>
 
-          {stage === 2 ? (
-            <p className="figure-note" data-cross-note>
-              The cross-attention block is the only place the two columns meet. It is the
-              same operation as every other attention block on this page — the only
-              difference is where its three inputs come from.
-            </p>
-          ) : null}
-
-          {stage >= 3 ? (
-            <p className="figure-note" data-width-note>
-              Every block above is labelled with the shape actually flowing through it, and
-              the residual stream never changes width: {STREAM} in, {STREAM} out, all the way
-              through. That is the property that lets {N_LAYERS} of them stack.
-            </p>
-          ) : null}
         </div>
       )}
     </ChapterFrame>

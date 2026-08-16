@@ -5,6 +5,7 @@ import { runForward } from "../../lib/transformer/forward.js";
 import { W_O } from "../../lib/transformer/weights.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 7. The claims each head's caption makes about what it attends to are
 // computed here from `argmaxPerRow`, not written by hand — and the unit suite
@@ -28,21 +29,21 @@ export default function Ch07MultiHead() {
         <>
           <div className="heads" data-heads>
             {pass.heads.map((head, i) => {
-              const lit =
-                focus === null
-                  ? stage <= 1
+              const visible =
+                stage === 0
+                  ? focus === null || focus === i
+                  : stage <= 2
                     ? i === 0
                     : stage === 3
                       ? i === 1
-                      : true
-                  : focus === i;
+                      : false;
               return (
                 <section
                   key={i}
                   className="head"
                   data-head={i}
-                  data-lit={lit ? "true" : "false"}
-                  hidden={stage >= 1 && stage <= 3 && !lit}
+                  data-lit="true"
+                  hidden={!visible}
                 >
                   <h3 className="head__title">
                     Head {i} — {head.label}
@@ -69,8 +70,8 @@ export default function Ch07MultiHead() {
             })}
           </div>
 
-          {stage >= 4 ? (
-            <div className="pair">
+          <StageBlock id="head-output" when={stage >= 4}>
+            <div className="pair head-output" tabIndex={0} role="group" aria-label="Concatenate and mix the two head outputs">
               <Matrix
                 name="concat"
                 rows={pass.concat}
@@ -100,9 +101,9 @@ export default function Ch07MultiHead() {
                 role="neutral"
               />
             </div>
-          ) : null}
+          </StageBlock>
 
-          <div className="controls">
+          {stage === 0 ? <div className="controls">
             <div className="control">
               <p className="control__legend" id="head-picker-label">
                 Show
@@ -129,14 +130,14 @@ export default function Ch07MultiHead() {
                 </button>
               </div>
             </div>
-          </div>
+          </div> : null}
 
-          <p className="ramp-legend">
+          {stage > 0 && stage < 4 ? <p className="ramp-legend">
             <span>0</span>
             <span className="ramp-legend__bar" data-scale="sequential" aria-hidden="true" />
             <span>1</span>
             <span>both heads share one weight scale, so they are comparable</span>
-          </p>
+          </p> : null}
         </>
       )}
     </ChapterFrame>

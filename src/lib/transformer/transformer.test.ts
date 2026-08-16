@@ -1,4 +1,9 @@
 import { describe, expect, it } from "vitest";
+import {
+  assertValidAttentionRow,
+  getAttentionRows,
+  toDisplayPercents,
+} from "./attentionInteraction.js";
 import { D_K, D_MODEL, N_HEADS, SCALE, SEQ_LEN, TOKENS } from "./constants.js";
 import {
   aggregationTerms,
@@ -373,5 +378,67 @@ describe("the rest of the layer", () => {
         if (pass.ffnPreRelu[i]![j]! < 0) expect(value).toBe(0);
       });
     });
+  });
+});
+
+describe("attention interaction data", () => {
+  it("gives one row per token, reading head 0 — the same default chapters 4-6 use", () => {
+    const rows = getAttentionRows();
+    expect(rows).toHaveLength(SEQ_LEN);
+    rows.forEach((row, i) => {
+      expect(row.queryPosition).toBe(i);
+      expect(row.rawScores).toEqual(pass.heads[0]!.rawScores[i]);
+      expect(row.weights).toEqual(pass.heads[0]!.weights[i]);
+    });
+  });
+
+  it("passes assertValidAttentionRow on every real row", () => {
+    for (const row of getAttentionRows()) {
+      expect(() => assertValidAttentionRow(row)).not.toThrow();
+    }
+  });
+
+  it("rejects a row whose weights don't sum to 1", () => {
+    expect(() =>
+      assertValidAttentionRow({ queryPosition: 0, rawScores: [0, 0], weights: [0.5, 0.6] }),
+    ).toThrow();
+  });
+
+  it("rejects a negative or non-finite weight", () => {
+    expect(() =>
+      assertValidAttentionRow({ queryPosition: 0, rawScores: [0, 0], weights: [-0.1, 1.1] }),
+    ).toThrow();
+    expect(() =>
+      assertValidAttentionRow({ queryPosition: 0, rawScores: [0, 0], weights: [NaN, 1] }),
+    ).toThrow();
+  });
+
+  it("rounds every real row's weights to whole percents that sum to exactly 100", () => {
+    for (const row of getAttentionRows()) {
+      const percents = toDisplayPercents(row.weights);
+      expect(percents.reduce((total, value) => total + value, 0)).toBe(100);
+      percents.forEach((value) => expect(Number.isInteger(value)).toBe(true));
+    }
+  });
+
+  it("sums to exactly 100 even for an adversarial, near-tied distribution", () => {
+    const weights = [1 / 6, 1 / 6, 1 / 6, 1 / 6, 1 / 6, 1 / 6];
+    const percents = toDisplayPercents(weights);
+    expect(percents.reduce((total, value) => total + value, 0)).toBe(100);
+  });
+
+  it("sums to exactly 100 when one token dominates the distribution", () => {
+    const weights = [0.001, 0.001, 0.001, 0.001, 0.001, 0.995];
+    const percents = toDisplayPercents(weights);
+    expect(percents.reduce((total, value) => total + value, 0)).toBe(100);
+  });
+
+  it("gives the one leftover rounding point to the lowest tied index", () => {
+    // 1/3 each: raw = 33.33... × 3, floors sum to 99, one point left over. All
+    // three remainders and weights are tied, so the tie-break falls to position.
+    const weights = [1 / 3, 1 / 3, 1 / 3, 0, 0, 0];
+    const percents = toDisplayPercents(weights);
+    expect(percents).toEqual([34, 33, 33, 0, 0, 0]);
+    expect(percents.reduce((total, value) => total + value, 0)).toBe(100);
   });
 });

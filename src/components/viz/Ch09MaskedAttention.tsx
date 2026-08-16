@@ -5,6 +5,7 @@ import { runForward } from "../../lib/transformer/forward.js";
 import { fmt } from "../../lib/transformer/format.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 9. Same head, same scores as chapter 5 — the only change is the mask,
 // which is the point. The masked cells hold real −Infinity rather than a large
@@ -33,7 +34,7 @@ export default function Ch09MaskedAttention() {
     <ChapterFrame chapter={CHAPTER} vizLabel="Masked decoder attention">
       {(stage) => (
         <>
-          {stage <= 1 ? (
+          <StageBlock id="scores" when={stage === 0}>
             <Matrix
               name="scores"
               rows={head.scores}
@@ -43,9 +44,9 @@ export default function Ch09MaskedAttention() {
               scale="diverging"
               role="query"
             />
-          ) : null}
+          </StageBlock>
 
-          {stage === 1 ? (
+          <StageBlock id="masked-scores" when={stage === 1}>
             <Matrix
               name="masked-scores"
               rows={scores}
@@ -60,9 +61,9 @@ export default function Ch09MaskedAttention() {
                   : `${tokens[i]} cannot see ${tokens[j]} — it comes later`
               }
             />
-          ) : null}
+          </StageBlock>
 
-          {stage >= 2 ? (
+          <StageBlock id="masked-weights" when={stage === 2 || stage === 3}>
             <Matrix
               name="masked-weights"
               rows={weights}
@@ -72,9 +73,9 @@ export default function Ch09MaskedAttention() {
               scale="sequential"
               role="query"
             />
-          ) : null}
+          </StageBlock>
 
-          {stage >= 2 ? (
+          <StageBlock id="mask-readout" when={stage === 2} order={1}>
             <div className="working" data-mask-readout>
               <p className="working__line num">
                 Row {step} — “{tokens[step]}” — sums to{" "}
@@ -91,7 +92,7 @@ export default function Ch09MaskedAttention() {
                 number would only have made them very small.
               </p>
             </div>
-          ) : null}
+          </StageBlock>
 
           <div className="controls">
             <label className="control" htmlFor="gen-step">

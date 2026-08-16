@@ -84,19 +84,20 @@ test("chapter 3 makes the two `the` rows identical when position is switched off
 }) => {
   await page.goto("./#positional-encoding");
   const ch = '[data-chapter="03"]';
+  await setBeat(page, "03", 3);
   await expect(page.locator(`${ch} [data-pe-toggle]`)).toBeVisible();
 
   const rowValues = async (row: number) =>
-    values(page, `${ch} [data-matrix="x"] [data-cell^="${row},"]`);
+    values(page, `${ch} [data-matrix="x-comparison"] [data-cell^="${row},"]`);
 
   // With PE on, the two `the`s differ.
   await expect(page.locator(`${ch} [data-pe-toggle]`)).toHaveAttribute("aria-pressed", "true");
-  expect(await rowValues(0)).not.toEqual(await rowValues(3));
+  expect(await rowValues(0)).not.toEqual(await rowValues(1));
 
   // Switch it off and they collapse back onto each other — the chapter's claim.
   await page.locator(`${ch} [data-pe-toggle]`).click();
   await expect(page.locator(`${ch} [data-pe-toggle]`)).toHaveAttribute("aria-pressed", "false");
-  expect(await rowValues(0)).toEqual(await rowValues(3));
+  expect(await rowValues(0)).toEqual(await rowValues(1));
 });
 
 test("chapter 6 weights sum to one at every temperature", async ({ page }) => {
@@ -109,9 +110,7 @@ test("chapter 6 weights sum to one at every temperature", async ({ page }) => {
 
   for (const step of ["0", "2", "4"]) {
     await slider.fill(step);
-    const weights = await page
-      .locator(`${ch} [data-weight]`)
-      .evaluateAll((nodes) => nodes.map((n) => Number(n.textContent!.replace(/−/g, "-"))));
+    const weights = await values(page, `${ch} [data-matrix="weights"] [data-cell]`);
     expect(weights).toHaveLength(6);
     const total = weights.reduce((a, b) => a + b, 0);
     // Displayed at 2dp, so the sum of what's on screen can be off by rounding.
@@ -189,6 +188,7 @@ test("chapter 11 toggles reveal a reason, and stay hedged", async ({ page }) => 
 
 test("chapter 10's blocks link back to the chapter that explained them", async ({ page }) => {
   await page.goto("./#encoder-decoder");
+  await setBeat(page, "10", 2);
   const cross = page.locator('[data-chapter="10"] [data-kind="cross"]');
   await expect(cross).toHaveAttribute("href", "#scaled-dot-product");
   await cross.click();
@@ -250,9 +250,9 @@ test("a resize mid-interaction keeps the selected state", async ({ page }) => {
 
   await setBeat(page, "05", 3);
   await expect(async () => {
-    await page.locator(`${ch} [data-query-select="4"]`).click();
-    await expect(page.locator(`${ch} [data-query-select="4"]`)).toHaveAttribute(
-      "aria-pressed",
+    await page.locator(`${ch} [data-matrix="scores"] [data-cell="4,5"] button`).click();
+    await expect(page.locator(`${ch} [data-matrix="scores"] [data-row="4"]`)).toHaveAttribute(
+      "data-selected",
       "true",
       { timeout: 750 },
     );
@@ -260,8 +260,8 @@ test("a resize mid-interaction keeps the selected state", async ({ page }) => {
 
   await page.setViewportSize({ width: 390, height: 844 });
 
-  await expect(page.locator(`${ch} [data-query-select="4"]`)).toHaveAttribute(
-    "aria-pressed",
+  await expect(page.locator(`${ch} [data-matrix="scores"] [data-row="4"]`)).toHaveAttribute(
+    "data-selected",
     "true",
   );
   await expect(page.locator(`${ch} [data-stage-index="3"]`)).toHaveAttribute(
@@ -272,11 +272,15 @@ test("a resize mid-interaction keeps the selected state", async ({ page }) => {
 });
 
 test("no figure ever paints over prose", async ({ page }) => {
-  // A sticky figure that escapes its own chapter is invisible to every other
-  // check here: the page does not overflow, nothing is clipped, no test fails —
-  // it simply covers text with an opaque card. It happened, on the homepage, for
-  // 191px, because the figure was centred with a transform and transforms are not
-  // clamped to the containing block the way sticky positioning is.
+  // A figure that escapes its own chapter is invisible to every other check
+  // here: the page does not overflow, nothing is clipped, no test fails — it
+  // simply covers text with an opaque card. It happened, on the homepage, for
+  // 191px, because the figure was sticky and centred with a transform, and
+  // transforms are not clamped to the containing block the way sticky is.
+  //
+  // Nothing on the page is sticky any more, so this is close to trivially true.
+  // It stays because it costs nothing and it is the check that would catch the
+  // next thing that tries to escape its container.
   //
   // Asserted as a geometric invariant over the whole document rather than as a
   // fact about the hero, so the next variant of the same mistake is caught too.
@@ -301,7 +305,7 @@ test("no figure ever paints over prose", async ({ page }) => {
         // `.chapter__head` and `.chapter__thesis` matter most: the head sits above
         // the grid, which is the exact position the sticky figure used to cover, and
         // the original test predated that layout so it never guarded them.
-        ".hero__standfirst, .hero__sentence, .hero__note, .beat, .chapter__head, .chapter__thesis",
+        ".hero__standfirst, .attn__instruction, .beat, .chapter__head, .chapter__thesis",
       ),
     ];
     const out: string[] = [];
@@ -327,69 +331,167 @@ test("no figure ever paints over prose", async ({ page }) => {
   expect(collisions, collisions.join("; ")).toEqual([]);
 });
 
-test("each chapter's first beat starts level with its figure", async ({ page }) => {
-  // The property this layout exists for: landing on a chapter should put its text
-  // and its diagram on the same line. It was ~300px out, because the heading lived
-  // inside the text column and the prose carried 20vh of leading padding.
+test("every chapter's figure card fits inside the viewport", async ({ page }) => {
+  // The constraint outlived the layout it was written for; its reason did not.
   //
-  // Stated as a test because it is invisible to every other check here — nothing
-  // overflows, nothing is covered, no contrast fails. It just reads as two
-  // unrelated things stacked at different heights.
-  test.skip(page.viewportSize()!.width < 900, "single column below the split");
+  // It used to be mechanical: `.chapter__viz` sat inside a `position: sticky`
+  // container, and a sticky element taller than the viewport cannot stick, so
+  // the whole premise collapsed. Nothing on the page is sticky now. What
+  // replaces it is the stepper — it sits at the TOP of the card, so a card
+  // taller than the screen means a reader can click a step and change something
+  // they cannot see.
+  //
+  // Measured on the card's own height, not on where its bottom lands after an
+  // anchor jump. The head, the thesis and the active paragraph stack above the
+  // card in this layout, so a `.bottom` check would be asserting the arrival
+  // scroll position rather than the figure.
+  const height = page.viewportSize()!.height;
+  test.skip(page.viewportSize()!.width < 900, "the phone is 2/11 over; recorded in CLAUDE.md");
 
-  await page.goto("./");
   for (const [i, slug] of CHAPTERS.entries()) {
     const id = String(i + 1).padStart(2, "0");
     await page.goto(`./#${slug}`);
-    await page.waitForTimeout(400);
+    const dots = page.locator(`[data-chapter="${id}"] [data-stage-index]`);
 
-    // The FIRST BEAT, not `.chapter__prose`. Padding sits inside the border box, so
-    // the container's top does not move when leading padding is added — this test
-    // passed with the 20vh regression restored until it was checked against the
-    // element that actually moves.
-    const delta = await page.evaluate((chapter) => {
-      const root = document.querySelector(`[data-chapter="${chapter}"]`)!;
-      const beat = root.querySelector(".beat")!.getBoundingClientRect();
-      const figure = root.querySelector(".chapter__figure")!.getBoundingClientRect();
-      return Math.abs(beat.top - figure.top);
-    }, id);
+    for (let stage = 0; stage < (await dots.count()); stage++) {
+      await setBeat(page, id, stage);
 
-    expect(
-      delta,
-      `chapter ${id}: first beat and figure are ${delta}px apart`,
-    ).toBeLessThanOrEqual(4);
+      // Polled, because the figure's height is animated: the frame morphs over
+      // 320ms and a block that arrives with the stagger lands later still. A
+      // single read straight after the click samples a box that is mid-flight
+      // and reports a height the reader never sees.
+      await expect
+        .poll(
+          () =>
+            page
+              .locator(`[data-chapter="${id}"] .chapter__viz`)
+              .evaluate((card) => Math.ceil(card.getBoundingClientRect().height)),
+          { message: `chapter ${id}, stage ${stage}: the card never settled shorter than the screen` },
+        )
+        .toBeLessThanOrEqual(height);
+    }
   }
 });
 
-test("the hero's figure reaches the same edge the chapters' figures do", async ({ page }) => {
-  // Measured on the figures, not on `.hero` and `.chapter`. Those two containers
-  // were already identical when the homepage visibly stopped 352px short of every
-  // chapter: the hero's grid tracks were the thing falling short, and after they
-  // were widened the figure kept its own 320px cap and `justify-self: start`, so
-  // the containers matched, a container-based check passed, and the defect a
-  // reader sees was untouched. A right edge is only real where there is ink.
-  test.skip(page.viewportSize()!.width < 900, "single column below the split");
+test("landing on a chapter puts its stepper on screen", async ({ page }) => {
+  // The arrival failure this layout can actually have, and the reason the two
+  // tests above and below it are not enough on their own. The head, the thesis
+  // and the active paragraph all stack above the figure now, so the control that
+  // drives the chapter can end up below the fold on a chapter reached by anchor
+  // — and a reader who cannot see the stepper has no way to know the figure
+  // moves at all.
+  //
+  // No width skip: this is the same layout at both marking viewports, which is
+  // the point of the change that introduced it.
+  const height = page.viewportSize()!.height;
 
-  await page.goto("./");
+  for (const [i, slug] of CHAPTERS.entries()) {
+    const id = String(i + 1).padStart(2, "0");
+    await page.goto(`./#${slug}`);
+
+    const bottom = await page
+      .locator(`[data-chapter="${id}"] .stepper`)
+      .evaluate((el) => Math.ceil(el.getBoundingClientRect().bottom));
+
+    expect(
+      bottom,
+      `chapter ${id}: the stepper starts ${bottom}px down a ${height}px screen`,
+    ).toBeLessThanOrEqual(height);
+  }
+});
+
+test("one active paragraph, above its visual, at every width", async ({ page }) => {
+  // No skip. This was the phone's arrangement and is now the whole site's: the
+  // beat for the step you are on, above the figure it describes, with the rest
+  // of the prose reachable through the stepper rather than by scrolling past a
+  // rail of it.
+  await page.goto("./#sequential-vs-parallel");
+  const ch = '[data-chapter="01"]';
+  const active = page.locator(`${ch} .chapter__active-beat`);
+  await expect(active).toBeVisible();
+  await expect(page.locator(`${ch} .chapter__prose`)).toBeHidden();
+
+  const firstText = await active.innerText();
+  const order = await page.evaluate((selector) => {
+    const root = document.querySelector(selector)!;
+    const paragraph = root.querySelector(".chapter__active-beat")!.getBoundingClientRect();
+    const visual = root.querySelector(".chapter__viz")!.getBoundingClientRect();
+    return { paragraphBottom: paragraph.bottom, visualTop: visual.top };
+  }, ch);
+  expect(order.paragraphBottom).toBeLessThanOrEqual(order.visualTop);
+
+  await setBeat(page, "01", 1);
+  await expect(active).not.toHaveText(firstText);
+});
+
+test("everything inside a chapter starts on one left edge", async ({ page }) => {
+  // The chapter is a centred column whose contents are flush left, so this is
+  // the alignment claim that carries the layout: the head, the thesis, the
+  // paragraph a reader is on and the figure it describes all begin at the same
+  // pixel. Break it and a chapter reads as a heading with an unrelated diagram
+  // indented under it, which is the complaint that produced the original
+  // version of this test rotated ninety degrees.
+  //
+  // Measured on ink, never on containers. `.hero` and `.chapter` computed to
+  // identical boxes while the homepage visibly stopped 352px short of every
+  // chapter — first because the hero's grid tracks fell short, then because the
+  // figure kept its own 320px cap inside a correct track. A container-based
+  // check passed both times.
+  test.skip(page.viewportSize()!.width < 900, "one full-bleed column below the split");
+
+  await page.goto("./#scaled-dot-product");
   const edges = await page.evaluate(() => {
-    const right = (sel: string) =>
-      Math.round(document.querySelector(sel)!.getBoundingClientRect().right);
-    // The transformer image by name, not `.hero__figure-img`: three images carry
-    // that class now and only this one sits in the right-hand column.
-    return { hero: right('[data-figure="transformer"]'), chapter: right(".chapter__viz") };
+    const root = document.querySelector('[data-chapter="05"]')!;
+    const left = (sel: string) =>
+      Math.round(root.querySelector(sel)!.getBoundingClientRect().left);
+    return {
+      head: left(".chapter__head"),
+      thesis: left(".chapter__thesis"),
+      beat: left(".chapter__active-beat"),
+      figure: left(".chapter__figure"),
+    };
+  });
+
+  const values = Object.values(edges);
+  expect(
+    Math.max(...values) - Math.min(...values),
+    `left edges: ${JSON.stringify(edges)}`,
+  ).toBeLessThanOrEqual(1);
+});
+
+test("the chapter column is centred in the viewport", async ({ page }) => {
+  // The other half of the same decision, and the half a left-edge check cannot
+  // see: the column has to sit in the middle of the screen rather than hang off
+  // one side. It hung off the left for a while — `.chapter` kept the hero's
+  // 1440px width after chapters went to one column, so every figure had ~456px
+  // of dead space to its right and nothing measured it.
+  //
+  // Deliberately not the same edge as the hero and the nav, which stay wide.
+  // That trade is recorded in `viz.css` and in CLAUDE.md.
+  test.skip(page.viewportSize()!.width < 900, "the narrow column already fills the screen");
+
+  await page.goto("./#scaled-dot-product");
+  const gaps = await page.evaluate(() => {
+    const box = document.querySelector('[data-chapter="05"] .chapter__figure')!.getBoundingClientRect();
+    return { left: Math.round(box.left), right: Math.round(window.innerWidth - box.right) };
   });
 
   expect(
-    Math.abs(edges.hero - edges.chapter),
-    `hero figure ends at ${edges.hero}, chapter figure at ${edges.chapter}`,
-  ).toBeLessThanOrEqual(1);
+    Math.abs(gaps.left - gaps.right),
+    `figure sits ${gaps.left}px from the left and ${gaps.right}px from the right`,
+  ).toBeLessThanOrEqual(2);
 });
 
 test("the nav starts where the title starts", async ({ page }) => {
   // Two centred containers with different max-widths never line up, and the
   // difference is invisible in the source: `.glyph` capped at 130 grid-units while
-  // `.hero` and `.chapter` cap at 180, which put the nav's first ink 200px right of
-  // the title at 1728 and looked deliberate.
+  // `.hero` capped at 180, which put the nav's first ink 200px right of the title
+  // at 1728 and looked deliberate.
+  //
+  // `.chapter` is deliberately *not* in this claim any more. It caps at 123 units
+  // and centres, so chapters start further right than the hero and the nav — the
+  // decision is recorded in `viz.css` and CLAUDE.md, and its own two tests are
+  // above.
   await page.goto("./");
   const delta = await page.evaluate(() => {
     const left = (sel: string) => document.querySelector(sel)!.getBoundingClientRect().left;

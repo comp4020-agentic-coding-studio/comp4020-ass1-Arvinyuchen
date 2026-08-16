@@ -2,6 +2,7 @@ import { useState } from "react";
 import { chapterById } from "../../lib/transformer/chapters.js";
 import { SEQ_LEN, TOKENS } from "../../lib/transformer/constants.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 1. The only chapter with no model arithmetic in it — the claim is about
 // the shape of the computation, not about any particular numbers, so the figures
@@ -26,8 +27,20 @@ export default function Ch01SequentialVsParallel() {
   return (
     <ChapterFrame chapter={CHAPTER} vizLabel="Recurrence against attention">
       {(stage) => (
-        <div className="lanes" data-lanes>
-          <section className="lane" data-lane="recurrent" data-lit={stage <= 1 ? "true" : "false"}>
+        <div
+          className="lanes"
+          data-lanes
+          data-compare={stage === 3 ? "true" : "false"}
+          tabIndex={stage === 3 ? 0 : undefined}
+          role={stage === 3 ? "group" : undefined}
+          aria-label={stage === 3 ? "Compare recurrence and attention" : undefined}
+        >
+          <section
+            className="lane"
+            data-lane="recurrent"
+            data-lit="true"
+            hidden={stage === 2}
+          >
             <h3 className="lane__title">One at a time</h3>
             <ol className="lane__track">
               {labels.map((label, i) => (
@@ -57,7 +70,12 @@ export default function Ch01SequentialVsParallel() {
             </dl>
           </section>
 
-          <section className="lane" data-lane="attention" data-lit={stage >= 2 ? "true" : "false"}>
+          <section
+            className="lane"
+            data-lane="attention"
+            data-lit="true"
+            hidden={stage < 2}
+          >
             <h3 className="lane__title">All at once</h3>
             <ol className="lane__track lane__track--flat">
               {labels.map((label, i) => (
@@ -88,30 +106,34 @@ export default function Ch01SequentialVsParallel() {
             </dl>
           </section>
 
-          <div className="controls">
-            <label className="control" htmlFor="seq-len">
-              <span className="control__legend">Sentence length</span>
-              <input
-                id="seq-len"
-                type="range"
-                min={SEQ_LEN}
-                max={MAX_N}
-                step={1}
-                value={n}
-                data-seq-len
-                onChange={(event) => setN(Number(event.target.value))}
-              />
-              <output className="num" htmlFor="seq-len">
-                {n} words
-              </output>
-            </label>
-          </div>
+          {stage >= 3 ? (
+            <div className="controls">
+              <label className="control" htmlFor="seq-len">
+                <span className="control__legend">Sentence length</span>
+                <input
+                  id="seq-len"
+                  type="range"
+                  min={SEQ_LEN}
+                  max={MAX_N}
+                  step={1}
+                  value={n}
+                  data-seq-len
+                  onChange={(event) => setN(Number(event.target.value))}
+                />
+                <output className="num" htmlFor="seq-len">
+                  {n} words
+                </output>
+              </label>
+            </div>
+          ) : null}
 
-          <p className="figure-note">
-            At {n} words, recurrence needs {recurrentSteps} steps in order and carries
-            information up to {recurrentPath} hops; attention needs one step and{" "}
-            {comparisons} comparisons. That is the trade the paper makes.
-          </p>
+          <StageBlock id="length-note" when={stage >= 3} order={2}>
+            <p className="figure-note">
+              At {n} words, recurrence needs {recurrentSteps} steps in order and carries
+              information up to {recurrentPath} hops; attention needs one step and{" "}
+              {comparisons} comparisons. That is the trade the paper makes.
+            </p>
+          </StageBlock>
         </div>
       )}
     </ChapterFrame>

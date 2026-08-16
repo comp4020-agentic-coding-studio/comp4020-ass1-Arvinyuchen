@@ -1,16 +1,18 @@
 ---
-import { SEQ_LEN, TOKENS } from "../lib/transformer/constants";
 import figure1 from "../assets/images/transformer.png";
 import figure2a from "../assets/images/attention.png";
 import figure2b from "../assets/images/mha.png";
-import { ATTENTION_TEX } from "../lib/transformer/notation";
-import { tex } from "../lib/viz/tex";
+import TokenAttentionInteraction from "./viz/TokenAttentionInteraction.tsx";
 
-// Static on purpose. The hero is the first thing on a phone over a bad
-// connection, and none of it needs JavaScript: the equation is KaTeX rendered at
-// build time, and the sentence comes from the same constant every chapter reads.
-// KaTeX emits both HTML and MathML, so the accessible reading is the MathML rather
-// than a hand-written `sr-only` gloss that could drift from the formula beside it.
+// The hero used to be static — the equation was KaTeX rendered at build time,
+// with no JavaScript needed. It now carries the site's first hydrated island:
+// `TokenAttentionInteraction` replaces that equation with the same relation,
+// made interactive, so a reader meets compare → weight → mix before chapter 1
+// rather than reading a symbol for it. `client:load` rather than `client:visible`
+// because this sits above the fold and is meant to be interactive immediately,
+// unlike the eleven chapters below, which hydrate as the reader scrolls to them.
+// The component fetches its own data from `runForward()`/`constants.ts`, the same
+// way every chapter does — the page never pipes attention data down to it.
 //
 // The paper's own figures sit beside the equation as an orientation cue: the
 // equation is the mechanism, the diagrams are where it lives. Figure 1 is the
@@ -59,23 +61,7 @@ import { tex } from "../lib/viz/tex";
       hand.
     </p>
 
-    <div class="hero__formula" set:html={tex(ATTENTION_TEX, { display: true })} />
-
-    <ol class="hero__sentence" aria-label={`The worked example, ${SEQ_LEN} tokens`}>
-      {
-        TOKENS.map((token, i) => (
-          <li class="token" data-token={token} data-position={i}>
-            <span class="token__word">{token}</span>
-            <span class="token__index num">{i}</span>
-          </li>
-        ))
-      }
-    </ol>
-
-    <p class="hero__note">
-      Two of those six tokens are the same word. Chapter&nbsp;3 is about why that is
-      a problem, and what the paper does about it.
-    </p>
+    <TokenAttentionInteraction client:load />
   </div>
 
   <figure class="hero__figure">

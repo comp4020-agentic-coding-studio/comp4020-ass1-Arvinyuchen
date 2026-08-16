@@ -8,7 +8,7 @@ import { absMax } from "../../lib/viz/ramp.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Formula, type Slot } from "./primitives/Formula.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
-import { Reveal } from "./primitives/Reveal.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 import { TermExpansion } from "./primitives/TermExpansion.tsx";
 
 // Chapter 5. The one the page is built around.
@@ -83,71 +83,93 @@ export default function Ch05ScaledDotProduct() {
           {/* Shown from the first beat rather than the second, so the
               server-rendered HTML carries real matrices: a reader with no
               JavaScript still gets Q, K and the equation, not an empty frame. */}
-          {stage < 3 ? (
-            <Reveal id="qk-pair">
-              <div className="pair">
-                <Matrix
-                  name="q"
-                  rows={head.q}
-                  label="Q — one query per token"
-                  rowLabels={tokens}
-                  colLabels={DIM_LABELS}
-                  scale="diverging"
-                  role="query"
-                  selectedRow={row}
-                  focusRow={stage >= 2}
-                  onRow={setRow}
-                />
-                <Matrix
-                  name="k"
-                  rows={head.k}
-                  label="K — one key per token"
-                  rowLabels={tokens}
-                  colLabels={DIM_LABELS}
-                  scale="diverging"
-                  role="key"
-                  selectedRow={col}
-                  focusRow={stage >= 2}
-                  onRow={setCol}
-                />
-              </div>
-            </Reveal>
-          ) : null}
-
-          {stage >= 2 ? (
-            <Reveal id="working" order={1}>
-              <TermExpansion
-                expansion={expansion}
-                aTex={String.raw`q_{\mathrm{${tokens[row]}}}`}
-                bTex={String.raw`k_{\mathrm{${tokens[col]}}}`}
-                divisorTex={String.raw`\sqrt{d_k} = \sqrt{${D_K}} = ${fmt(SCALE, 4)}`}
-                scaled={scaled}
+          <StageBlock id="qk-pair" when={stage < 2}>
+            <div className="pair">
+              <Matrix
+                name="q"
+                rows={head.q}
+                label="Q — one query per token"
+                rowLabels={tokens}
+                colLabels={DIM_LABELS}
+                scale="diverging"
+                role="query"
+                selectedRow={row}
+                focusRow={stage >= 2}
+                onRow={setRow}
               />
-            </Reveal>
-          ) : null}
-
-          <div className="controls">
-            <div className="control">
-              <p className="control__legend" id="query-picker-label">
-                Query
-              </p>
-              <div className="row-picker" role="group" aria-labelledby="query-picker-label">
-                {tokens.map((token, i) => (
-                  <button
-                    key={`q-${i}`}
-                    type="button"
-                    data-query-select={i}
-                    aria-pressed={row === i}
-                    onClick={() => setRow(i)}
-                  >
-                    {token}
-                    <span className="sr-only"> at position {i}</span>
-                  </button>
-                ))}
-              </div>
+              <Matrix
+                name="k"
+                rows={head.k}
+                label="K — one key per token"
+                rowLabels={tokens}
+                colLabels={DIM_LABELS}
+                scale="diverging"
+                role="key"
+                selectedRow={col}
+                focusRow={stage >= 2}
+                onRow={setCol}
+              />
             </div>
+          </StageBlock>
 
-            {stage >= 4 ? (
+          <StageBlock id="selected-qk-pair" when={stage === 2}>
+            <div className="pair pair--compact">
+              <Matrix
+                name="q-selected"
+                rows={[head.q[row]!]}
+                label={`q — “${tokens[row]}” asks`}
+                rowLabels={[tokens[row]!]}
+                colLabels={DIM_LABELS}
+                scale="diverging"
+                role="query"
+              />
+              <Matrix
+                name="k-selected"
+                rows={[head.k[col]!]}
+                label={`k — “${tokens[col]}” answers`}
+                rowLabels={[tokens[col]!]}
+                colLabels={DIM_LABELS}
+                scale="diverging"
+                role="key"
+              />
+            </div>
+          </StageBlock>
+
+          <StageBlock id="working" when={stage === 2} order={1}>
+            <TermExpansion
+              expansion={expansion}
+              aTex={String.raw`q_{\mathrm{${tokens[row]}}}`}
+              bTex={String.raw`k_{\mathrm{${tokens[col]}}}`}
+              divisorTex={String.raw`\sqrt{d_k} = \sqrt{${D_K}} = ${fmt(SCALE, 4)}`}
+              scaled={scaled}
+            />
+          </StageBlock>
+
+          {stage === 0 || stage === 2 || stage === 4 ? (
+            <div className="controls" hidden={stage === 0}>
+              {stage === 0 || stage === 2 || stage === 4 ? (
+                <div className="control">
+                  <p className="control__legend" id="query-picker-label">
+                    Query
+                  </p>
+                  <div className="row-picker" role="group" aria-labelledby="query-picker-label">
+                    {tokens.map((token, i) => (
+                      <button
+                        key={`q-${i}`}
+                        type="button"
+                        data-query-select={i}
+                        aria-pressed={row === i}
+                        onClick={() => setRow(i)}
+                      >
+                        {token}
+                        <span className="sr-only"> at position {i}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {stage === 4 ? (
               <div className="control">
                 <button
                   type="button"
@@ -159,19 +181,18 @@ export default function Ch05ScaledDotProduct() {
                   scaling {scaled ? "on" : "off"}
                 </button>
               </div>
-            ) : null}
-          </div>
-
-          {stage >= 3 ? (
-            <Reveal id="legend" order={2}>
-              <p className="ramp-legend">
-                <span>{fmt(-domainMax)}</span>
-                <span className="ramp-legend__bar" data-scale="diverging" aria-hidden="true" />
-                <span>{fmt(domainMax)}</span>
-                <span>negative ← zero → positive</span>
-              </p>
-            </Reveal>
+              ) : null}
+            </div>
           ) : null}
+
+          <StageBlock id="legend" when={stage === 3} order={2}>
+            <p className="ramp-legend">
+              <span>{fmt(-domainMax)}</span>
+              <span className="ramp-legend__bar" data-scale="diverging" aria-hidden="true" />
+              <span>{fmt(domainMax)}</span>
+              <span>negative ← zero → positive</span>
+            </p>
+          </StageBlock>
         </>
       )}
     </ChapterFrame>

@@ -7,6 +7,7 @@ import { fmt, fmtPrecise } from "../../lib/transformer/format.js";
 import { softmax } from "../../lib/transformer/linalg.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 6. Softmax shown as the three steps it actually is, then the weighted
 // sum built term by term. Both come from derive.ts, so the arithmetic under the
@@ -41,7 +42,7 @@ export default function Ch06SoftmaxAndValues() {
           {/* Only while it is the subject: past beat 1 the same numbers are the
               table's "score" column, and repeating them cost 90px of a figure
               that has to stay shorter than a phone screen. */}
-          {stage <= 1 ? (
+          <StageBlock id="score-row" when={stage === 0}>
             <Matrix
               name="score-row"
               rows={[tempered]}
@@ -51,13 +52,13 @@ export default function Ch06SoftmaxAndValues() {
               scale="diverging"
               role="query"
             />
-          ) : null}
+          </StageBlock>
 
           {/* Two things about this table. It scrolls horizontally at phone
               widths, so it takes a tab stop — see the note in Matrix.tsx. And it
               stays visible through the last beat on purpose: the temperature
               slider's whole point is watching these weights redistribute. */}
-          {stage >= 1 ? (
+          <StageBlock id="softmax-steps" when={stage === 1}>
             <div
               className="softmax-steps"
               data-softmax-steps
@@ -108,9 +109,9 @@ export default function Ch06SoftmaxAndValues() {
                 </tfoot>
               </table>
             </div>
-          ) : null}
+          </StageBlock>
 
-          {stage >= 2 ? (
+          <StageBlock id="weights" when={stage === 2 || stage === 4}>
             <Matrix
               name="weights"
               rows={[weights]}
@@ -120,13 +121,13 @@ export default function Ch06SoftmaxAndValues() {
               scale="sequential"
               role="query"
             />
-          ) : null}
+          </StageBlock>
 
           {/* Grouped as a `.pair` so on a phone the value matrix and its working
               sit side by side and scroll, rather than stacking to 1164px in an
               844px viewport. */}
-          {stage === 3 ? (
-            <div className="pair">
+          <StageBlock id="values" when={stage === 3}>
+            <div className="pair pair--compact">
               <Matrix
                 name="v"
                 rows={head.v}
@@ -161,7 +162,7 @@ export default function Ch06SoftmaxAndValues() {
                 ))}
               </div>
             </div>
-          ) : null}
+          </StageBlock>
 
           <div className="controls">
             <div className="control">
@@ -203,12 +204,12 @@ export default function Ch06SoftmaxAndValues() {
             ) : null}
           </div>
 
-          <p className="ramp-legend">
+          {(stage === 2 || stage === 4) ? <p className="ramp-legend">
             <span>0</span>
             <span className="ramp-legend__bar" data-scale="sequential" aria-hidden="true" />
             <span>1</span>
             <span>weights, on a fixed 0–1 scale across all {SEQ_LEN} rows</span>
-          </p>
+          </p> : null}
         </>
       )}
     </ChapterFrame>

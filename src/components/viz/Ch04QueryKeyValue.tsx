@@ -9,6 +9,7 @@ import type { Role } from "../../lib/viz/ramp.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
 import { TermExpansion } from "./primitives/TermExpansion.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 const CHAPTER = chapterById("04")!;
 const KD = ["dim 0", "dim 1"] as const;
@@ -46,7 +47,10 @@ export default function Ch04QueryKeyValue() {
     <ChapterFrame chapter={CHAPTER} vizLabel="Query, key and value projections">
       {(stage) => (
         <>
-          {stage === 0 ? (
+          {/* The whole-lane view and the single-cell derivation are two blocks
+              rather than the two arms of a ternary, so moving between them is a
+              replacement with a direction rather than a resize. */}
+          <StageBlock id="lanes" when={stage === 0}>
             <div className="pair">
               {LANES.map((l) => (
                 <Matrix
@@ -61,7 +65,9 @@ export default function Ch04QueryKeyValue() {
                 />
               ))}
             </div>
-          ) : (
+          </StageBlock>
+
+          <StageBlock id="projection" when={stage === 1}>
             <div className="projection" data-projection={which}>
               <Matrix
                 name="x"
@@ -112,9 +118,48 @@ export default function Ch04QueryKeyValue() {
                 }}
               />
             </div>
-          )}
+          </StageBlock>
 
-          {stage >= 2 ? (
+          <StageBlock id="projection-detail" when={stage >= 2}>
+            <div className="projection projection--compact" data-projection={which}>
+              <Matrix
+                name="x-selected"
+                rows={[pass.x[row]!]}
+                label={`X row for “${tokens[row]}”`}
+                rowLabels={[tokens[row]!]}
+                colLabels={dims}
+                scale="diverging"
+                role="neutral"
+              />
+
+              <p className="projection__op math" aria-hidden="true">×</p>
+
+              <Matrix
+                name={`w-${which}-column`}
+                rows={weightColumn.map((value) => [value])}
+                label={`Column ${col} of W_${which.toUpperCase()}`}
+                rowLabels={dims}
+                colLabels={[KD[col]!]}
+                scale="diverging"
+                domainMax={1}
+                role={lane.role}
+              />
+
+              <p className="projection__op math" aria-hidden="true">=</p>
+
+              <Matrix
+                name={`${which}-selected`}
+                rows={[[output[row]![col]!]]}
+                label="One projected value"
+                rowLabels={[tokens[row]!]}
+                colLabels={[KD[col]!]}
+                scale="diverging"
+                role={lane.role}
+              />
+            </div>
+          </StageBlock>
+
+          <StageBlock id="working" when={stage === 2} order={1}>
             <TermExpansion
               expansion={expansion}
               aTex={String.raw`X_{\mathrm{${tokens[row]}}}`}
@@ -122,7 +167,7 @@ export default function Ch04QueryKeyValue() {
               divisorTex="1"
               scaled={false}
             />
-          ) : null}
+          </StageBlock>
 
           <div className="controls">
             <div className="control">

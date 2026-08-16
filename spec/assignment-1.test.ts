@@ -403,19 +403,39 @@ describe("built assets resolve on disk", () => {
   });
 });
 
+describe("the hero's token attention interaction", () => {
+  // The hero's static equation was replaced by an interactive island: six real
+  // buttons, server-rendered before any script runs, one per token of the
+  // worked example. This is what the static/SSR'd markup can assert — the
+  // phase animation itself only exists once client script hydrates, which
+  // JSDOM never executes; that behaviour is covered by `e2e/hero-attention.spec.ts`.
+  it("server-renders its root and one button per token", () => {
+    const doc = loadBuiltPage();
+    const root = doc.querySelector('[data-viz="token-attention"]');
+    expect(root, "no token-attention root").not.toBeNull();
+
+    const buttons = [...root!.querySelectorAll("button[data-token][data-position]")];
+    expect(buttons).toHaveLength(SEQ_LEN);
+    buttons.forEach((button, i) => {
+      expect(button.getAttribute("data-token")).toBe(TOKENS[i]);
+      expect(button.getAttribute("data-position")).toBe(String(i));
+    });
+  });
+
+  it("gives the two `the` buttons distinct accessible labels", () => {
+    const doc = loadBuiltPage();
+    const buttons = [...doc.querySelectorAll('[data-viz="token-attention"] button[data-token]')];
+    const labels = buttons.map((button) => button.getAttribute("aria-label"));
+    expect(new Set(labels).size).toBe(SEQ_LEN);
+    expect(labels[0]).toContain("position 0");
+    expect(labels[3]).toContain("position 3");
+  });
+});
+
 describe("equations are rendered, not printed", () => {
   // KaTeX runs at build time, so if it ever stops running the page ships raw TeX
   // as visible text. That is invisible to a typecheck and to every other test
   // here, and it is exactly the failure this catches.
-  it("renders the hero equation through KaTeX, in the built HTML", () => {
-    const doc = loadBuiltPage();
-    const formula = doc.querySelector(".hero__formula");
-    expect(formula, "no hero formula").not.toBeNull();
-    expect(formula!.querySelector(".katex"), "the hero equation is not KaTeX output").not.toBeNull();
-    // KaTeX emits MathML alongside the HTML, which is what a screen reader reads.
-    expect(formula!.querySelector("math"), "no MathML for assistive technology").not.toBeNull();
-  });
-
   it("leaks no TeX source into visible text", () => {
     const doc = loadBuiltPage();
     // KaTeX keeps the source in an `<annotation>` inside the MathML, which is
@@ -452,6 +472,40 @@ describe("accessibility floor", () => {
     const meta = doc.querySelector('meta[name="description"]');
     expect(meta).not.toBeNull();
     expect(meta!.getAttribute("content")!.length).toBeGreaterThan(20);
+  });
+
+  // The motion layer's markup contract.
+  //
+  // This file runs in JSDOM against `dist/` and never executes a script, so it
+  // can see the hooks the motion depends on and nothing about whether anything
+  // moves. Direction, the nav's mark and the one-layout-at-every-width guarantee
+  // are all `e2e/motion.spec.ts`'s job — what is checked here is that the hooks
+  // those specs reach for are in the server-rendered HTML in the first place.
+
+  it("wraps every beat's prose in its own line element", () => {
+    // The span outlived its reason: it existed so the prose could translate
+    // without moving the paragraph the scroll observer measured. There is no
+    // observer now, but this is the contract, and the beats are the only
+    // machine-readable statement that each chapter's prose exists.
+    const doc = loadBuiltPage();
+    for (const id of CHAPTER_IDS) {
+      const beats = [...doc.querySelectorAll(`[data-chapter="${id}"] .beat`)];
+      expect(beats.length, `chapter ${id} has no beats`).toBeGreaterThan(0);
+      for (const beat of beats) {
+        const line = beat.querySelector(".beat__line");
+        expect(line, `chapter ${id} has a beat with no line element`).not.toBeNull();
+        expect(line!.textContent!.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("ships the nav with nothing marked current", () => {
+    // Same reason: which chapter the reader is in is not knowable at build time,
+    // and a mark baked into the HTML would be wrong for every reader but one.
+    const doc = loadBuiltPage();
+    expect(doc.querySelectorAll("[data-chapter-link]").length).toBe(CHAPTER_IDS.length);
+    expect(doc.querySelectorAll("[data-chapter-link][data-current]").length).toBe(0);
+    expect(doc.querySelectorAll("[data-chapter-link][aria-current]").length).toBe(0);
   });
 
   it("keeps every interactive control a real button or link", () => {

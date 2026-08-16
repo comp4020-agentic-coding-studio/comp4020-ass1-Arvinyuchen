@@ -8,6 +8,7 @@ import { fmt, fmtPrecise } from "../../lib/transformer/format.js";
 import { frequencyDivisor, pairCount, positionalEncoding } from "../../lib/transformer/positional.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
 import { Matrix } from "./primitives/Matrix.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 3. The curves are drawn from the same `positionalEncoding` the matrix
 // is built from, sampled finely — so a dot sitting off its curve would be a real
@@ -47,7 +48,7 @@ export default function Ch03PositionalEncoding() {
           {/* The curve strip scrolls sideways on phones and contains only SVG,
               so it has no focusable content of its own and needs a tab stop —
               same reason as the matrices. */}
-          {stage >= 1 ? (
+          <StageBlock id="curves" when={stage === 1}>
             <div
               className="curves"
               data-curves
@@ -127,36 +128,37 @@ export default function Ch03PositionalEncoding() {
                 );
               })}
             </div>
-          ) : null}
+          </StageBlock>
 
-          <div className="pair">
-            <Matrix
-              name="pe"
-              rows={pass.pe}
-              label="PE — computed from the paper's formula"
-              rowLabels={tokens}
-              colLabels={dims}
-              scale="diverging"
-              domainMax={1}
-              role="position"
-              selectedRow={position}
-              focusRow={stage >= 1}
-              onRow={setPosition}
-            />
-            <Matrix
-              name="x"
-              rows={x}
-              label={addPe ? "X = E + PE — the input to every layer" : "E alone — position switched off"}
-              rowLabels={tokens}
-              colLabels={dims}
-              scale="diverging"
-              role={addPe ? "position" : "neutral"}
-              selectedRow={position}
-              onRow={setPosition}
-            />
-          </div>
+          <StageBlock id="pe" when={stage === 0}>
+            <div className="pair">
+              <Matrix
+                name="pe"
+                rows={pass.pe}
+                label="PE — computed from the paper's formula"
+                rowLabels={tokens}
+                colLabels={dims}
+                scale="diverging"
+                domainMax={1}
+                role="position"
+                selectedRow={position}
+                onRow={setPosition}
+              />
+              <Matrix
+                name="x"
+                rows={x}
+                label={addPe ? "X = E + PE — the input to every layer" : "E alone — position switched off"}
+                rowLabels={tokens}
+                colLabels={dims}
+                scale="diverging"
+                role={addPe ? "position" : "neutral"}
+                selectedRow={position}
+                onRow={setPosition}
+              />
+            </div>
+          </StageBlock>
 
-          {stage === 2 ? (
+          <StageBlock id="pe-working" when={stage === 2} order={1}>
             <div className="working" data-term-expansion>
               <p className="working__head">
                 Position {position} — “{tokens[position]}”, element by element
@@ -172,9 +174,21 @@ export default function Ch03PositionalEncoding() {
                 </p>
               ))}
             </div>
-          ) : null}
+          </StageBlock>
 
-          {stage >= 3 ? (
+          <StageBlock id="x-comparison" when={stage === 3}>
+            <Matrix
+              name="x-comparison"
+              rows={[x[0]!, x[3]!]}
+              label={addPe ? "The two ‘the’ positions now differ" : "Without position, the two ‘the’ rows collide"}
+              rowLabels={["the · 0", "the · 3"]}
+              colLabels={dims}
+              scale="diverging"
+              role={addPe ? "position" : "neutral"}
+            />
+          </StageBlock>
+
+          <StageBlock id="the-comparison" when={stage === 3} order={1}>
             <p className="figure-note" data-the-comparison>
               {addPe ? (
                 <>
@@ -189,47 +203,51 @@ export default function Ch03PositionalEncoding() {
                 </>
               )}
             </p>
-          ) : null}
+          </StageBlock>
 
-          <div className="controls">
-            <label className="control" htmlFor="pe-position">
-              <span className="control__legend">Position</span>
-              <input
-                id="pe-position"
-                type="range"
-                min={0}
-                max={SEQ_LEN - 1}
-                step={1}
-                value={position}
-                data-position-slider
-                onChange={(event) => setPosition(Number(event.target.value))}
-              />
-              <output className="num" htmlFor="pe-position" data-position-value>
-                {position} — {tokens[position]}
-              </output>
-            </label>
+          {stage >= 1 ? <div className="controls">
+            {stage === 1 || stage === 2 ? (
+              <label className="control" htmlFor="pe-position">
+                <span className="control__legend">Position</span>
+                <input
+                  id="pe-position"
+                  type="range"
+                  min={0}
+                  max={SEQ_LEN - 1}
+                  step={1}
+                  value={position}
+                  data-position-slider
+                  onChange={(event) => setPosition(Number(event.target.value))}
+                />
+                <output className="num" htmlFor="pe-position" data-position-value>
+                  {position} — {tokens[position]}
+                </output>
+              </label>
+            ) : null}
 
-            <div className="control">
-              <button
-                type="button"
-                className="toggle"
-                data-pe-toggle
-                aria-pressed={addPe}
-                onClick={() => setAddPe((on) => !on)}
-              >
-                + PE {addPe ? "on" : "off"}
-              </button>
-            </div>
-          </div>
+            {stage === 3 ? (
+              <div className="control">
+                <button
+                  type="button"
+                  className="toggle"
+                  data-pe-toggle
+                  aria-pressed={addPe}
+                  onClick={() => setAddPe((on) => !on)}
+                >
+                  + PE {addPe ? "on" : "off"}
+                </button>
+              </div>
+            ) : null}
+          </div> : null}
 
-          <p className="ramp-legend">
+          {stage !== 2 ? <p className="ramp-legend">
             <span>−1</span>
             <span className="ramp-legend__bar" data-scale="diverging" aria-hidden="true" />
             <span>+1</span>
             <span>
               {D_MODEL} dimensions, {pairs} sine/cosine pairs
             </span>
-          </p>
+          </p> : null}
         </>
       )}
     </ChapterFrame>

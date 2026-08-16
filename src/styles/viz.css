@@ -22,9 +22,8 @@
 /* The hero is budgeted to one screen at 1920 × 1080, the viewport this is marked
  * at: nav 76 + padding 48 + eyebrow and title 140 + figure block 742 + padding 48
  * = 1054. It held 1274 before, so the figures the hero exists to show were cut off
- * at 100% zoom. The budget is whitespace only — the figure block is untouched, so
- * its right edge stays on the chapters' — which also means a few lines of hero copy
- * would spend it. An e2e test asserts the fold. */
+ * at 100% zoom. The budget is whitespace only, which also means a few lines of hero
+ * copy would spend it. An e2e test asserts the fold. */
 .hero {
   display: grid;
   max-width: calc(var(--grid-unit) * 180);
@@ -123,13 +122,17 @@
 }
 
 .hero__figure {
-  /* Fills its column, so the hero's right ink edge lands where every chapter's
-   * figure does. Capping it at 320px and pinning it with `justify-self: start` was
-   * the earlier attempt: it made the grid tracks match while leaving the visible
+  /* Fills its column. Capping it at 320px and pinning it with `justify-self: start`
+   * was the earlier attempt: it made the grid tracks match while leaving the visible
    * content 352px short, which is the defect a reader sees rather than the one a
    * bounding-box measurement reports. Column 2 is what sets the size now — there
    * is no dead space to the right of the image, so there is nothing to align
-   * against. */
+   * against.
+   *
+   * It used to end on the pixel every chapter's figure ended on, and an e2e test
+   * held it there. Chapters are one narrower centred column now and share neither
+   * edge with the hero, so that test was replaced by two: one that a chapter's own
+   * contents are flush left, one that its column is centred. */
 
   /* No top margin on desktop: the figure is a column, and it starts level with the
    * title beside it. The stacked case adds one below, where the figure follows the
@@ -208,39 +211,155 @@
   }
 }
 
-.hero__sentence {
+/* ------------------------------------------------- token attention interaction */
+
+/* Replaces `.hero__formula`. Same slot in the column, same top margin. */
+.attn {
+  margin-block-start: var(--space-6);
+}
+
+.attn__instruction {
+  max-width: var(--measure-lead);
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* A quiet running label, not a second headline — the phase is also carried by
+ * the token row's own numbers, so this exists for a sighted reader tracking the
+ * animation without one, not as the primary announcement (that's the
+ * `aria-live` region below). */
+.attn__phase-indicator {
+  margin-block-start: var(--space-2);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* `position: relative` so the overlay SVG can sit on top of the token row at
+ * `inset: 0`; `min-width: 0` for the same reason `.hero__body` needs it — a flex
+ * item's default `min-width: auto` would let a long connection path push the
+ * stage wider than the column instead of wrapping the row beneath it. */
+.attn__stage {
+  position: relative;
+  min-width: 0;
+  margin-block-start: var(--space-4);
+}
+
+/* Reserved headroom for the arc/loop overlay, which paints outside the stage
+ * box via `.attn-overlay`'s `overflow: visible`. Capped at `--space-7` in the
+ * component (`MAX_BOW`/`LOOP_HEIGHT`), so this clearance keeps every line
+ * below the phase-indicator text instead of the two colliding. Scoped to
+ * non-idle so idle state — nothing drawn yet — carries no extra gap. */
+.attn__stage[data-phase]:not([data-phase="idle"]) {
+  padding-block-start: var(--space-7);
+}
+
+.attn-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.attn-connection {
+  fill: none;
+  stroke: var(--role-key);
+  stroke-width: calc(var(--hairline) + var(--w, 0) * 3px);
+  stroke-linecap: round;
+
+  /* De-emphasis is saturation, never opacity — CLAUDE.md's rule, from the axe-core
+   * pass that failed low-opacity text as insufficient contrast. A near-zero
+   * weight still leaves a visible, if quiet, line rather than an invisible one. */
+  filter: saturate(calc(0.25 + var(--w, 0) * 0.75));
+  transition: stroke-width var(--dur) var(--ease), filter var(--dur) var(--ease);
+
+  /* Draws in rather than appearing fully formed. `pathLength={1}` on the
+   * element normalizes dash units to 0–1 regardless of geometric length.
+   * Reduced motion is handled by global.css's blanket rule zeroing
+   * animation-duration — no extra gating needed here. */
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: attn-connection-draw var(--dur-slow) var(--ease) forwards;
+}
+
+@keyframes attn-connection-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.attn-connection[data-self="true"] {
+  stroke: var(--role-query);
+}
+
+.attn-particle {
+  fill: var(--role-value);
+}
+
+.attn__tokens {
   display: flex;
   flex-wrap: wrap;
   margin: 0;
-  margin-block-start: var(--space-6);
   padding: 0;
   gap: var(--space-2);
   list-style: none;
 }
 
-.token {
+/* Each flex line is as tall as its tallest token card. Making the list item a
+ * flex container lets its button stretch to that line height too, so the
+ * one-line Replay label matches the three-line token cards beside it. */
+.attn__tokens > li {
+  display: flex;
+}
+
+.attn-token {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  min-height: calc(var(--grid-unit) * 5.5);
   padding: var(--space-2) var(--space-3);
   border: var(--hairline) solid var(--rule-strong);
   border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+
+/* Plain surface only when not carrying a weight fill — `.fill-seq` (global.css,
+ * loaded before this file) sets its own `background-color` via `color-mix()`,
+ * and `:not()` here beats it on specificity purely by load order otherwise. */
+.attn-token:not(.fill-seq) {
   background-color: var(--surface-raised);
 }
 
-.token__word {
+/* Identity in the border, exactly like `.row-picker button[aria-pressed]` —
+ * the selected token is the query, so it takes the query hue. */
+.attn-token[aria-pressed="true"] {
+  border-color: var(--role-query);
+  box-shadow: inset 0 0 0 var(--hairline) var(--role-query);
+  font-weight: 600;
+}
+
+.attn-token__word {
   font-size: var(--text-md);
 }
 
-.token__index {
+.attn-token__index {
   color: var(--ink-3);
   font-size: var(--text-xs);
 }
 
-.hero__note {
-  max-width: var(--measure);
-  margin-block-start: var(--space-5);
+.attn-token__value {
   color: var(--ink-2);
+  font-size: var(--text-xs);
 }
+
+/* `.attn__replay` carries no rule of its own — shape comes entirely from the
+ * shared `.attn-token` class (reused, not duplicated) so it sits in the same
+ * flex row, right of the last token. It never carries `.fill-seq`, so it
+ * stays on the plain surface colour even while every real token is coloured
+ * by weight; it replays, it isn't a weight. The class exists only as an
+ * e2e/test hook. */
 
 /* ---------------------------------------------------------------- glyph nav */
 
@@ -314,6 +433,28 @@
   color: var(--on-accent);
 }
 
+/*
+ * Where the reader is. Desktop only, so the phone nav renders exactly as it did
+ * — the script still runs there and still sets the attribute, and nothing in the
+ * narrow layout draws it.
+ *
+ * A surface change and an ink change, not the accent fill the hover state uses:
+ * hovering is something the reader is doing, being here is something that is
+ * true, and the two should not look the same.
+ */
+@media (width >= 900px) {
+  .glyph__link {
+    transition:
+      background-color var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+
+  .glyph__link[data-current] {
+    background-color: var(--surface-raised);
+    color: var(--ink);
+  }
+}
+
 /* ---------------------------------------------------------------- footer */
 
 .footer {
@@ -337,13 +478,35 @@
   gap: var(--space-5);
 }
 
+.pair--compact {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.pair--compact > * {
+  flex: 0 0 auto;
+}
+
 /* ---------------------------------------------------------------- chapter */
 
 .chapter {
-  /* Wide enough that the expanded 6 x 6 score grid, the softmax wrapper and the
-   * trailing V all fit on one line inside the figure column at 1920 -- at 160
-   * units the last column of the grid was clipped and had to be scrolled to. */
-  max-width: calc(var(--grid-unit) * 180);
+  /* The chapter is a centred column, and everything inside it is flush left.
+   *
+   * 123 units is 984px: the figure's 936 plus this rule's own padding, so the
+   * container is exactly as wide as its widest child and there is no rag inside
+   * it to explain. At 1920 that centres the block at 468–1452, with the head,
+   * the thesis, the active paragraph and the figure all starting at 492.
+   *
+   * It was 180 units (1440) — the hero's and the nav's width — while chapters
+   * were two columns and the figure filled the second one. As one column that
+   * left ~456px of dead space to the right of every figure, and centring the
+   * mass reads better than hanging it off an edge it no longer reaches. The
+   * trade is deliberate: chapters no longer share a left edge with the hero
+   * title and the nav glyph, which stay at 264. */
+  max-width: calc(var(--grid-unit) * 123);
   margin-inline: auto;
   padding-block: var(--space-8);
   padding-inline: var(--space-4);
@@ -376,18 +539,33 @@
 }
 
 .chapter__figure {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-
   /* A grid item's default min-width is `auto`, meaning its content size — so
    * without this the figure column sized itself to the 6-column score grid
    * (638px) inside a 390px viewport and dragged the whole document sideways.
    * The matrix's own `overflow-x` can only take effect once its ancestors are
    * allowed to be narrower than their contents. */
   min-width: 0;
+
+  /* No cap of its own. `.chapter` is sized to hold exactly this — 936px of
+   * figure inside a 984px container — so a second `max-width` here would be the
+   * same number written twice, and the two would drift. The 936 is not
+   * arbitrary: it is the width the figure had as the second column of the
+   * two-column layout, so every figure lays out as it always did and the
+   * recorded heights carry over. */
   padding-block: var(--space-3);
   background-color: var(--surface);
+}
+
+.chapter__active-beat {
+  /* Capped, because this paragraph is no longer only ever seen on a phone.
+   * Uncapped at 1920 it set a 1392px line — about 200 characters, roughly three
+   * times a readable measure. `--measure` rather than `--measure-lead`: this is
+   * body-size prose, and it is the measure the desktop prose rail used, so the
+   * line length a reader sees is unchanged from the layout this replaced. */
+  max-width: var(--measure);
+  margin-block-end: var(--space-4);
+  color: var(--ink);
+  text-wrap: pretty;
 }
 
 .chapter__viz {
@@ -399,8 +577,12 @@
   box-shadow: var(--shadow-figure);
 }
 
+.chapter__viz-content {
+  min-width: 0;
+}
+
 .chapter__prose {
-  display: flex;
+  display: none;
   min-width: 0;
   max-width: var(--measure);
   flex-direction: column;
@@ -417,60 +599,14 @@
   color: var(--ink);
 }
 
-@media (width >= 900px) {
-  .chapter__body {
-    grid-template-columns: minmax(0, 32ch) minmax(0, 1fr);
-    align-items: start;
-    gap: var(--space-6);
-  }
-
-  .chapter__prose {
-    grid-row: 1;
-    grid-column: 1;
-
-    /* The gap is what gives each beat room to be read on its own before the next
-     * one takes over, so it is viewport-relative and large. Was 60vh with 30vh
-     * padding, which made the document 39,000px tall at 1728: a lot of scrolling
-     * between changes, then everything at once.
-     *
-     * Do not drop this and inherit the base 72px. Beat tops then sit 184px apart
-     * instead of ~590px, the whole chapter collapses to about one screen, and
-     * scrolling rips through every stage in two wheel clicks. */
-    gap: 44vh;
-
-    /* Leading padding is zero. It was 20vh — 216px at 1080 — which put the first
-     * beat well below the figure it describes. The trailing padding stays so the
-     * last beat can still reach the active line. */
-    padding-block: 0 20vh;
-  }
-
-  .chapter__figure {
-    grid-row: 1;
-    grid-column: 2;
-
-    /* Starts level with the first beat and sticks just below the viewport edge as
-     * the beats scroll past. It used to be a viewport-tall box centring its own
-     * contents, which put the figure at the middle of the screen while the chapter
-     * heading sat at the top — so arriving at a chapter showed a heading and a
-     * diagram that looked unrelated.
-     *
-     * Whatever replaces this, do not centre it with `top: 50%; translate: 0 -50%`.
-     * Sticky positioning is clamped to its containing block; a transform is applied
-     * afterwards and is not, so the figure slid out of its own chapter and painted
-     * its opaque card over the hero. That cost the homepage 191px of content and
-     * nothing in the CSS looked wrong. */
-    top: var(--space-6);
-    padding-block: 0;
-    background-color: transparent;
-  }
-}
-
 /* ---------------------------------------------------------------- stepper */
 
 .stepper {
   display: flex;
   align-items: center;
-  margin-block-start: var(--space-3);
+  margin-block-end: var(--space-3);
+  padding-block-end: var(--space-2);
+  border-block-end: var(--hairline) solid var(--rule);
   gap: var(--space-2);
 }
 
@@ -661,6 +797,14 @@ tr[data-selected="true"] > .matrix__row-head {
   border-color: var(--ink);
 }
 
+tr {
+  /* The dimming below has to fade, or the row it applies to snaps out of the
+   * reader's attention in one frame while the cell fills underneath it are
+   * still crossing. `.lane`, `.head` and `.stack` all carry this already; the
+   * matrix row was the one that got the state and not the transition. */
+  transition: filter var(--dur) var(--ease);
+}
+
 tr[data-dimmed="true"] {
   filter: saturate(0.12);
 }
@@ -719,7 +863,13 @@ tr[data-dimmed="true"] {
 .formula [data-lit="false"] {
   color: var(--ink-3);
   filter: saturate(0.2);
-  transition: color var(--dur) var(--ease);
+
+  /* Both properties, not just the colour. With `filter` left off the list the
+   * term lost its hue instantly and then faded its ink over 260ms, which reads
+   * as two separate things happening to one word. */
+  transition:
+    color var(--dur) var(--ease),
+    filter var(--dur) var(--ease);
 }
 
 .formula__fn,
@@ -1059,6 +1209,17 @@ tr[data-dimmed="true"] {
   filter: saturate(0.12);
 }
 
+.head-output {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.head-output > * {
+  flex: 0 0 auto;
+}
+
 .head__title {
   margin: 0;
   font-size: var(--text-sm);
@@ -1127,13 +1288,18 @@ tr[data-dimmed="true"] {
 }
 
 .stack__blocks {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
   margin-block-start: var(--space-2);
   padding: 0;
   gap: var(--space-2);
   list-style: none;
+}
+
+.block__index {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
 }
 
 .block {
@@ -1191,6 +1357,48 @@ tr[data-dimmed="true"] {
   font-size: var(--text-xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.modern-shift {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  margin-block-start: var(--space-4);
+  gap: var(--space-3);
+}
+
+.modern-shift > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: var(--space-3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  gap: var(--space-1);
+}
+
+.modern-shift > div > span:last-child {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+.modern-shift__date {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
+.modern-shift__arrow {
+  color: var(--ink-3);
+  font-size: var(--text-lg);
+}
+
+@media (width >= 900px) {
+  .lanes[data-compare="true"] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .diff {
@@ -1310,21 +1518,50 @@ tr[data-dimmed="true"] {
   }
 }
 
-/* Reveal wrappers must not introduce a stacking or sizing surprise. */
+/* Stage-block wrappers must not introduce a stacking or sizing surprise. */
 .reveal {
   min-width: 0;
+}
+
+/*
+ * Two places where the wrapper replaced a fragment whose children were flex
+ * items of the container above it. A wrapper is one item where there were
+ * several, so the container's own layout has to be restated on it or the parts
+ * inside collapse together — the spine lost the 8px between its label and its
+ * matrix and stopped centring them, and the architecture's two columns stopped
+ * sharing the width evenly.
+ *
+ * The alternative was `display: contents`, which is exactly wrong here: a box
+ * that generates no box cannot be transformed, and transforming it is the whole
+ * point of the wrapper.
+ */
+.spine > .reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.architecture > .reveal {
+  min-width: 0;
+  flex: 1 1 0;
 }
 
 /*
  * Narrow screens: groups of side-by-side figures scroll sideways instead of
  * stacking.
  *
- * A display lint over every chapter at 390x844 found the sticky figure taller
- * than the viewport on ten of eleven chapters — up to 2306px in an 844px
- * viewport. A `position: sticky` element taller than the viewport cannot stick:
- * it scrolls away, and the whole premise of a figure that stays put while the
- * prose moves past collapses. Stacking two matrices vertically was most of that
- * height.
+ * A display lint over every chapter at 390x844 found the figure taller than the
+ * viewport on ten of eleven chapters — up to 2306px in an 844px viewport, and
+ * stacking two matrices vertically was most of that height.
+ *
+ * The reason that mattered has changed twice, and the note here was wrong the
+ * second time. It first said a `position: sticky` element taller than the
+ * viewport cannot stick — true of the desktop layout, never true here, since
+ * nothing below 900px has ever been sticky. The real reason, at both widths
+ * now: the stepper sits at the top of the figure card, so a card taller than
+ * the screen means a reader can click a step and change something they cannot
+ * see.
  *
  * So they stay in a row and the row scrolls, which halves the height and reuses
  * the horizontal-scroll affordance the matrices already have. The tab stop added
@@ -1334,7 +1571,6 @@ tr[data-dimmed="true"] {
   .pair,
   .projection,
   .heads,
-  .lanes,
   .spine {
     flex-wrap: nowrap;
     align-items: flex-start;
@@ -1346,13 +1582,17 @@ tr[data-dimmed="true"] {
     scroll-snap-type: x proximity;
   }
 
-  .spine,
-  .lanes {
+  .spine {
     flex-direction: row;
   }
 
-  .lane {
-    flex: 0 0 86%;
+  .lanes[data-compare="true"] {
+    flex-flow: row nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
   }
 
   /* In a no-wrap strip the *strip* owns the overflow, so its children must keep
@@ -1362,10 +1602,15 @@ tr[data-dimmed="true"] {
   .pair > *,
   .projection > *,
   .heads > *,
-  .lanes > *,
   .spine > *,
   .curves > * {
     flex: 0 0 auto;
+    max-width: none;
+    scroll-snap-align: start;
+  }
+
+  .lanes[data-compare="true"] > * {
+    flex: 0 0 86%;
     max-width: none;
     scroll-snap-align: start;
   }
@@ -1385,5 +1630,13 @@ tr[data-dimmed="true"] {
   .curve {
     width: 78%;
   }
-}
 
+  .modern-shift {
+    grid-template-columns: 1fr;
+  }
+
+  .modern-shift__arrow {
+    justify-self: center;
+    rotate: 90deg;
+  }
+}

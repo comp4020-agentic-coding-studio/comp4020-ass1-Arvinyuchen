@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { chapterById } from "../../lib/transformer/chapters.js";
 import { ChapterFrame } from "./ChapterFrame.tsx";
+import { StageBlock } from "./primitives/Stage.tsx";
 
 // Chapter 11, and the one place the page steps outside the paper.
 //
@@ -88,7 +89,23 @@ export default function Ch11ModernLlms() {
             document.
           </p>
 
-          {stage === 1 ? (
+          <StageBlock id="modern-shift" when={stage === 0}>
+            <div className="modern-shift" data-modern-shift>
+              <div>
+                <span className="modern-shift__date num">2017</span>
+                <strong>Encoder + decoder</strong>
+                <span>Cross-attention joins two stacks</span>
+              </div>
+              <span className="modern-shift__arrow" aria-hidden="true">→</span>
+              <div>
+                <span className="modern-shift__date num">later practice</span>
+                <strong>Often decoder-only</strong>
+                <span>One causal stack predicts the next token</span>
+              </div>
+            </div>
+          </StageBlock>
+
+          <StageBlock id="diff" when={stage === 1}>
             <ul className="diff" data-diff>
               {CHANGES.map((change) => {
                 const active = on.has(change.id);
@@ -113,9 +130,9 @@ export default function Ch11ModernLlms() {
                 );
               })}
             </ul>
-          ) : null}
+          </StageBlock>
 
-          {stage === 1 ? (
+          <StageBlock id="hedge" when={stage === 1} order={1}>
             <p className="figure-note" data-hedge>
               {on.size === 0
                 ? "Nothing switched on yet — this is the 2017 architecture."
@@ -124,9 +141,9 @@ export default function Ch11ModernLlms() {
               particular model uses is a question about that model, and worth checking
               rather than assuming.
             </p>
-          ) : null}
+          </StageBlock>
 
-          {stage >= 2 ? (
+          <StageBlock id="survives" when={stage === 2}>
             <section className="survives" data-survives>
               <h3 className="survives__title">What did not change</h3>
               <ul>
@@ -139,7 +156,7 @@ export default function Ch11ModernLlms() {
                 to read.
               </p>
             </section>
-          ) : null}
+          </StageBlock>
         </div>
       )}
     </ChapterFrame>
